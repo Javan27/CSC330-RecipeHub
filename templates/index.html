@@ -31,136 +31,76 @@
         </div>
 
     <script>
-        // Simulated user
         const loggedInUser = { username: "Javan" };
         document.getElementById('current-user').innerText = loggedInUser.username;
 
-        // The main data array holding the recipes liek memory 
-        let recipes = [];
+        // Fetch all recipes from the Flask database on load
+        async function renderGrid() {
+            const grid = document.getElementById('recipe-grid');
+            
+            try {
+                const response = await fetch('/api/recipes');
+                const recipes = await response.json();
 
-        // Add a new recipe card
-        document.getElementById('btn-create-recipe').addEventListener('click', () => {
+                grid.innerHTML = ''; 
+
+                if (recipes.length === 0) {
+                    grid.innerHTML = `<p>No recipes yet. Create one above!</p>`;
+                    return;
+                }
+
+                recipes.forEach(recipe => {
+                    const card = document.createElement('div');
+                    card.innerHTML = `
+                        <hr>
+                        <h2>${recipe.name}</h2>
+                        <p><strong>Servings:</strong> ${recipe.servings}</p>
+                        <button onclick="deleteRecipe(${recipe.id})">Delete Recipe</button>
+                        <p><em>Database ID: ${recipe.id}</em></p>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Error loading recipes:", err);
+                grid.innerHTML = `<p>Error connecting to database. Make sure Flask is running!</p>`;
+            }
+        }
+
+        // Send a new recipe to the Flask backend
+        document.getElementById('btn-create-recipe').addEventListener('click', async () => {
             const nameInput = document.getElementById('new-recipe-name');
             const servingInput = document.getElementById('new-serving-size');
             
             const name = nameInput.value.trim();
-            const servings = servingInput.value.trim() || '4'; // Automatically makes it 4 if user does not enter 
+            const servings = servingInput.value.trim() || '4';
 
             if (!name) {
                 alert('Enter a recipe name!');
                 return;
             }
 
-            recipes.push({
-                id: Date.now(), // unique ID
-                name: name,
-                servings: servings,
-                ingredients: []
+            const response = await fetch('/api/recipes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, servings })
             });
 
-            // clear inputs
-            nameInput.value = ''; 
-            servingInput.value = ''; 
-            
-            renderGrid();
+            if (response.ok) {
+                nameInput.value = ''; 
+                servingInput.value = ''; 
+                renderGrid(); // Refresh grid to show the new db entry
+            }
         });
 
-        // Render the entire dashboard grid
-        function renderGrid() {
-            const grid = document.getElementById('recipe-grid');
-            grid.innerHTML = ''; // clear grid
-
-            if (recipes.length === 0) {
-                grid.innerHTML = `<p>No recipes yet. Create one above!</p>`;
-                return;
-            }
-
-            recipes.forEach(recipe => {
-                const card = document.createElement('div');
-                
-                // Card header, delete button, and serving size
-                let cardHTML = `
-                    <hr>
-                    <h2>${recipe.name}</h2>
-                    <p><strong>Servings:</strong> ${recipe.servings}</p>
-                    <button onclick="deleteRecipe(${recipe.id})">Delete Recipe</button>
-                    
-                    <h4>Ingredients</h4>
-                    <div>
-                        <input type="text" id="ing-qty-${recipe.id}" placeholder="Qty" style="width: 50px;">
-                        <input type="text" id="ing-unit-${recipe.id}" placeholder="Unit" style="width: 70px;">
-                        <input type="text" id="ing-name-${recipe.id}" placeholder="Ingredient...">
-                        <button onclick="addIngredient(${recipe.id})">Add Ingredient</button>
-                    </div>
-                    
-                    <ul>
-                `;
-
-                // Add ingredients to card
-                if (recipe.ingredients.length === 0) {
-                    cardHTML += `<li>No ingredients yet.</li>`;
-                } else {
-                    recipe.ingredients.forEach(ingredient => {
-                        cardHTML += `
-                            <li>
-                                <strong>${ing.quantity} ${ing.unit}</strong> ${ing.name}
-                                <button onclick="deleteIngredient(${recipe.id}, ${ing.id})">x</button>
-                            </li>
-                        `;
-                    });
-                }
-
-                cardHTML += `</ul>`;
-                card.innerHTML = cardHTML;
-                grid.appendChild(card);
-            });
-        }
-
-        // Delete a whole recipe card
-        function deleteRecipe(recipeId) {
-            if (confirm('Are you sure you want to delete this recipe?')) {
-                recipes = recipes.filter(r => r.id !== recipeId);
+        // Delete recipe from the database
+        async function deleteRecipe(recipeId) {
+            if (confirm('Are you sure?')) {
+                await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE' });
                 renderGrid();
             }
         }
 
-        // Add an ingredient to a recipe card
-        function addIngredient(recipeId) {
-            const qtyInput = document.getElementById(`ing-qty-${recipeId}`);
-            const unitInput = document.getElementById(`ing-unit-${recipeId}`);
-            const nameInput = document.getElementById(`ing-name-${recipeId}`);
-
-            const qty = qtyInput.value.trim() || '1';
-            const unit = unitInput.value.trim() || 'unit';
-            const name = nameInput.value.trim();
-
-            if (!name) {
-                alert('Ingredient name cannot be empty!');
-                return;
-            }
-
-            const recipe = recipes.find(r => r.id === recipeId);
-            if (recipe) {
-                recipe.ingredients.push({
-                    id: Date.now(),
-                    quantity: qty,
-                    unit: unit,
-                    name: name
-                });
-                renderGrid();
-            }
-        }
-
-        // Delete a specific ingredient from a recipe card
-        function deleteIngredient(recipeId, ingredientId) {
-            const recipe = recipes.find(r => r.id === recipeId);
-            if (recipe) {
-                recipe.ingredients = recipe.ingredients.filter(ing => ing.id !== ingredientId);
-                renderGrid();
-            }
-        }
-
-        // Initial render on load (will be empty)
+        // Initial load
         renderGrid();
     </script>
 </body>
