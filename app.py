@@ -1,12 +1,19 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-#This creates a local database file named recipes.db
+
+# Secret key is required for session management (keeping users logged in)
+app.config['SECRET_KEY'] = 'your_super_secret_key_here'
+# This creates the database in the 'instance' folder automatically
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///recipes.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
-#Database Model
+#Database Models
+
 class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -17,49 +24,66 @@ class User(db.Model):
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
-#Create the database tables
+# Create the database tables
 with app.app_context():
     db.create_all()
 
+#Routes
+
 @app.route('/')
 def index():
-    return render_template('index.html')
-@app.route('/login', methods = ['GET', 'POST'])
+    # Basic check: if 'user_id' isn't in session, send them to login
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('index.html', username=session.get('username'))
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
         user = User.query.filter_by(username=username).first()
-        if user and user.password == password:
-            return redirect('/')
+        
+        # Using check_password_hash for security
+        if user and check_password_hash(user.password, password):
+            session['user_id'] = user.id
+            session['username'] = user.username
+            return redirect(url_for('index'))
         else:
-            return "Invalid login"
-
+            return "Invalid username or password", 401
     
     return render_template('login.html')
-    
-@app.route('/create_account', methods = ['GET','POST'])
+
+@app.route('/create_account', methods=['GET', 'POST'])
 def create_account():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
-        #checks for existing user
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user:
-            return "Username already exists"
+        if User.query.filter_by(username=username).first():
+            return "Username already exists", 400
 
-        #Confirms Passwords match
         if password != confirm_password:
-            return "Passwords do not match"
-        #Save User
-        new_user = User(username=username, password=password)
+            return "Passwords do not match", 400
+
+        # Save hashed password instead of plain text
+        hashed_pw = generate_password_hash(password)
+        new_user = User(username=username, password=hashed_pw)
+        
         db.session.add(new_user)
         db.session.commit()
-        return redirect('/login')
+        return redirect(url_for('login'))
+    
     return render_template('create_account.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+#API Endpoints
 
 @app.route('/api/recipes', methods=['GET'])
 def get_recipes():
