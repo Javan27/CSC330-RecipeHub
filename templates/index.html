@@ -9,7 +9,8 @@
 
     <div>
         <h1>Recipe Dashboard</h1>
-        <p><strong>Logged in as:</strong> <span id="current-user">Javan</span></p>
+        <p><strong>Logged in as:</strong> <span id="current-user"></span></p>
+        <a href="/logout"><button type="button">Logout</button></a>
     </div>
 
     <hr>
@@ -31,10 +32,10 @@
         </div>
 
     <script>
-        const loggedInUser = { username: "Javan" };
-        document.getElementById('current-user').innerText = loggedInUser.username;
+        // Use Jinja2 to get the username from the Flask session
+        const currentUsername = "{{ username }}";
+        document.getElementById('current-user').innerText = currentUsername;
 
-        // Fetch all recipes from the Flask database on load
         async function renderGrid() {
             const grid = document.getElementById('recipe-grid');
             
@@ -62,11 +63,10 @@
                 });
             } catch (err) {
                 console.error("Error loading recipes:", err);
-                grid.innerHTML = `<p>Error connecting to database. Make sure Flask is running!</p>`;
+                grid.innerHTML = `<p>Error connecting to database.</p>`;
             }
         }
 
-        // Send a new recipe to the Flask backend
         document.getElementById('btn-create-recipe').addEventListener('click', async () => {
             const nameInput = document.getElementById('new-recipe-name');
             const servingInput = document.getElementById('new-serving-size');
@@ -88,11 +88,10 @@
             if (response.ok) {
                 nameInput.value = ''; 
                 servingInput.value = ''; 
-                renderGrid(); // Refresh grid to show the new db entry
+                renderGrid(); 
             }
         });
 
-        // Delete recipe from the database
         async function deleteRecipe(recipeId) {
             if (confirm('Are you sure?')) {
                 await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE' });
@@ -100,7 +99,6 @@
             }
         }
 
-        // Initial load
         renderGrid();
     </script>
 </body>
