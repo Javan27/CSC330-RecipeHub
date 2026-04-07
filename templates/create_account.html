@@ -1,23 +1,35 @@
-<!doctype html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create an Account</title>
+</head>
+<body>
+    <h2>Create Your Account</h2>
+    
+    <form action="/create_account" method="POST">
+        <div>
+            <label>Create Username</label>
+            <input type="text" name="username" required>
+        </div>
 
-<html>
- <head>
- 	<title> Create an Account </title>
- </head>
- 	<body>
- 		<form>
- 			<label> Create Username </label>
- 			<input type="text" name ="username">
+        <div>
+            <label>Password</label>
+            <input type="password" name="password" required>
+        </div>
 
- 			<label> Password </label>
- 			<input type ="password" name ="password">
+        <div>
+            <label>Confirm Password</label>
+            <input type="password" name="confirm_password" required>
+        </div>
 
- 			<label> Confirm Password </label>
- 			<input type ="password" name ="confirm_password">
+        <button type="submit">Submit</button>
+    </form>
 
- 			<button type="submit"> Submit </button>
- 			
- 		</form>
- 	</body>
-
+    <hr>
+    <p>Already have an account?</p>
+    <a href="/login">
+        <button type="button">Back to Login</button>
+    </a>
+</body>
 </html>
