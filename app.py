@@ -102,10 +102,12 @@ def add_recipe():
 @app.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
 def delete_recipe(recipe_id):
     recipe = Recipe.query.get(recipe_id)
+    
     if recipe:
-        db.session.delete(recipe)
-        db.session.commit()
-        return jsonify({'message': 'Recipe deleted'}), 200
+        db.session.delete(recipe) 
+        db.session.commit()       
+        return jsonify({'message': 'Recipe deleted successfully'}), 200
+    
     return jsonify({'error': 'Recipe not found'}), 404
 
 if __name__ == '__main__':
