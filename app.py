@@ -26,7 +26,8 @@ class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     servings = db.Column(db.Integer, nullable=False)
-    # Foreign Key: Links the recipe to a specific User ID
+    ingredients = db.Column(db.Text, nullable=True)
+   # Foreign Key: Links the recipe to a specific User ID
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 #Routes
@@ -76,6 +77,18 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+@app.route('/search')
+def search():
+    query = request.args.get('q', '')
+    results = []
+    if query:
+        # This searches for the query inside both the Name and Ingredients columns
+        results = Recipe.query.filter(
+            (Recipe.name.contains(query)) | 
+            (Recipe.ingredients.contains(query))
+        ).all()
+    return render_template('search_results.html', results=results, query=query)
+
 #API Routes (For the Dashboard)
 
 @app.route('/api/recipes', methods=['GET'])
@@ -95,7 +108,8 @@ def create_recipe():
     data = request.json
     new_recipe = Recipe(
         name=data['name'], 
-        servings=data['servings'], 
+        servings=data['servings'],
+        ingredients=data.get('ingredients'), 
         user_id=session['user_id'] # Tag the recipe with the user's ID
     )
     db.session.add(new_recipe)
