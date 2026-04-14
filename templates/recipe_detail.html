@@ -4,7 +4,8 @@
 <body>
     <h1>{{ recipe.name }}</h1>
     <p><strong>Created by:</strong> {{ recipe.owner.username }}</p>
-    <p><strong>Ingredients:</strong> {{ recipe.ingredients or "None" }}</p>
+    <p><strong>Servings:</strong> {{ recipe.servings }}</p>
+    <p><strong>Ingredients:</strong> {{ recipe.ingredients or "None listed" }}</p>
     <p><strong>Avg Rating:</strong> {% if avg_rating == "Not yet rated" %}{{ avg_rating }}{% else %}{{ avg_rating }} ⭐{% endif %}</p>
 
     {% if is_owner %}
