@@ -141,11 +141,25 @@ def get_recipes():
         })
     return jsonify(output)
 
+
 @app.route('/api/recipes', methods=['POST'])
 def create_recipe():
     if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     data = request.json
-    new_recipe = Recipe(name=data['name'], servings=data['servings'], ingredients=data.get('ingredients'), user_id=session['user_id'])
+    
+    # Validation: Ensure servings is an integer and at least 1
+    try:
+        servings_val = int(data.get('servings', 1))
+        if servings_val < 1: servings_val = 1
+    except (ValueError, TypeError):
+        servings_val = 1
+
+    new_recipe = Recipe(
+        name=data['name'], 
+        servings=servings_val, 
+        ingredients=data.get('ingredients'), 
+        user_id=session['user_id']
+    )
     db.session.add(new_recipe)
     db.session.commit()
     return jsonify({'id': new_recipe.id}), 201
