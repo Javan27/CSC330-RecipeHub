@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Recipe Dashboard</title>
+    <style>
+        .recipe-card {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .comment-box {
+            background-color: #f9f9f9;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
 
@@ -11,6 +26,7 @@
         <h1>Recipe Dashboard</h1>
         <p><strong>Logged in as:</strong> <span id="current-user"></span></p>
         <a href="/logout"><button type="button">Logout</button></a>
+        <a href="/search"><button type="button">Search Recipes</button></a>
     </div>
 
     <hr>
@@ -23,6 +39,9 @@
         <label for="new-serving-size">Servings:</label>
         <input type="number" id="new-serving-size" placeholder="e.g., 4" min="1">
         
+        <label for="new-ingredients">Ingredients:</label>
+        <input type="text" id="new-ingredients" placeholder="e.g., Flour, Sugar, Butter">
+        
         <button id="btn-create-recipe">Create Recipe</button>
     </div>
 
@@ -32,7 +51,6 @@
         </div>
 
     <script>
-        // Use Jinja2 to get the username from the Flask session
         const currentUsername = "{{ username }}";
         document.getElementById('current-user').innerText = currentUsername;
 
@@ -52,12 +70,40 @@
 
                 recipes.forEach(recipe => {
                     const card = document.createElement('div');
+                    card.className = "recipe-card";
                     card.innerHTML = `
-                        <hr>
                         <h2>${recipe.name}</h2>
                         <p><strong>Servings:</strong> ${recipe.servings}</p>
+                        <p><strong>Avg Rating:</strong> ${recipe.avg_rating} ⭐</p>
+                        
+                        <div>
+                            <label>Rate this recipe: </label>
+                            <select onchange="rateRecipe(${recipe.id}, this.value)">
+                                <option value="">Select Stars</option>
+                                <option value="1">1 Star</option>
+                                <option value="2">2 Stars</option>
+                                <option value="3">3 Stars</option>
+                                <option value="4">4 Stars</option>
+                                <option value="5">5 Stars</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-top: 15px;">
+                            <h4>Comments</h4>
+                            <div id="comments-list-${recipe.id}">
+                                ${recipe.comments.map(c => `
+                                    <div class="comment-box">
+                                        <strong>${c.user}:</strong> ${c.text}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <input type="text" id="comment-input-${recipe.id}" placeholder="Add a comment...">
+                            <button onclick="postComment(${recipe.id})">Post</button>
+                        </div>
+
+                        <hr>
                         <button onclick="deleteRecipe(${recipe.id})">Delete Recipe</button>
-                        <p><em>Database ID: ${recipe.id}</em></p>
+                        <p><small>Database ID: ${recipe.id}</small></p>
                     `;
                     grid.appendChild(card);
                 });
@@ -67,12 +113,15 @@
             }
         }
 
+        //POST a new recipe
         document.getElementById('btn-create-recipe').addEventListener('click', async () => {
             const nameInput = document.getElementById('new-recipe-name');
             const servingInput = document.getElementById('new-serving-size');
+            const ingredientsInput = document.getElementById('new-ingredients');
             
             const name = nameInput.value.trim();
             const servings = servingInput.value.trim() || '4';
+            const ingredients = ingredientsInput.value.trim();
 
             if (!name) {
                 alert('Enter a recipe name!');
@@ -82,16 +131,47 @@
             const response = await fetch('/api/recipes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, servings })
+                body: JSON.stringify({ name, servings, ingredients })
             });
 
             if (response.ok) {
                 nameInput.value = ''; 
                 servingInput.value = ''; 
+                ingredientsInput.value = '';
                 renderGrid(); 
             }
         });
 
+        //POST a rating
+        async function rateRecipe(recipeId, stars) {
+            if (!stars) return;
+            await fetch(`/api/recipes/${recipeId}/rate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stars: parseInt(stars) })
+            });
+            renderGrid();
+        }
+
+        //POST a comment
+        async function postComment(recipeId) {
+            const input = document.getElementById(`comment-input-${recipeId}`);
+            const text = input.value.trim();
+            if (!text) return;
+
+            const response = await fetch(`/api/recipes/${recipeId}/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            });
+
+            if (response.ok) {
+                input.value = '';
+                renderGrid();
+            }
+        }
+
+        //DELETE a recipe
         async function deleteRecipe(recipeId) {
             if (confirm('Are you sure?')) {
                 await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE' });
