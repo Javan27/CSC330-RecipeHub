@@ -9,11 +9,13 @@
     <h1>Recipe Dashboard</h1>
     <p>Logged in as: <span id="current-user"></span> | <a href="/logout">Logout</a> | <a href="/search">Search Recipes</a></p>
     <hr>
-    <h3>Create New Recipe</h3>
-    <input type="text" id="new-recipe-name" placeholder="Recipe Name">
-    <input type="number" id="new-serving-size" placeholder="Servings" min="1">
-    <input type="text" id="new-ingredients" placeholder="Ingredients">
-    <button id="btn-create-recipe">Create Recipe</button>
+    <div>
+        <h3>Create New Recipe</h3>
+        <input type="text" id="new-recipe-name" placeholder="Recipe Name">
+        <input type="number" id="new-serving-size" placeholder="Servings" min="1" value="1">
+        <input type="text" id="new-ingredients" placeholder="Ingredients">
+        <button id="btn-create-recipe">Create Recipe</button>
+    </div>
     <hr>
     <div id="recipe-grid"></div>
 
@@ -35,22 +37,37 @@
                     <h2><a href="/recipe/${recipe.id}">${recipe.name}</a></h2>
                     <p><em>By: ${recipe.creator}</em></p>
                     <p><strong>Rating:</strong> ${rating}</p>
+                    <p><strong>Servings:</strong> ${recipe.servings}</p>
                 `;
                 grid.appendChild(card);
             });
         }
 
         document.getElementById('btn-create-recipe').addEventListener('click', async () => {
-            const name = document.getElementById('new-recipe-name').value;
-            const servings = document.getElementById('new-serving-size').value;
-            const ingredients = document.getElementById('new-ingredients').value;
-            if (!name) return alert('Name required');
-            await fetch('/api/recipes', {
+            const nameEl = document.getElementById('new-recipe-name');
+            const servingEl = document.getElementById('new-serving-size');
+            const ingredientsEl = document.getElementById('new-ingredients');
+
+            if (!nameEl.value.trim()) return alert('Name required');
+            if (parseInt(servingEl.value) < 1) return alert('Servings must be 1 or more');
+
+            const response = await fetch('/api/recipes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, servings, ingredients })
+                body: JSON.stringify({ 
+                    name: nameEl.value, 
+                    servings: servingEl.value, 
+                    ingredients: ingredientsEl.value 
+                })
             });
-            renderGrid();
+
+            if (response.ok) {
+                // Bug Fix: Clear the text boxes after success
+                nameEl.value = '';
+                servingEl.value = '1';
+                ingredientsEl.value = '';
+                renderGrid();
+            }
         });
         renderGrid();
     </script>
