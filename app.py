@@ -93,9 +93,26 @@ def logout():
 
 @app.route('/search')
 def search():
-    query = request.args.get('q', '')
-    results = Recipe.query.filter((Recipe.name.contains(query)) | (Recipe.ingredients.contains(query))).all() if query else []
-    return render_template('search_results.html', results=results, query=query)
+    query = request.args.get('q', '').strip()
+    results_data = []
+    if query:
+        #Search Name or Ingredients
+        results = Recipe.query.filter(
+            (Recipe.name.contains(query)) | (Recipe.ingredients.contains(query))
+        ).all()
+        
+        for r in results:
+            match_context = None
+            #Logic to find which ingredient matched the query
+            if r.ingredients and query.lower() in r.ingredients.lower():
+                match_context = f"Matches ingredient: {query}"
+            
+            results_data.append({
+                'recipe': r,
+                'context': match_context
+            })
+            
+    return render_template('search_results.html', results=results_data, query=query)
 
 #API Routes
 @app.route('/api/recipes', methods=['GET'])
