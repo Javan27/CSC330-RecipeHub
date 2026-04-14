@@ -1,62 +1,46 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>{{ recipe.name }} Details</title>
-</head>
+<head><title>{{ recipe.name }} Details</title></head>
 <body>
     <h1>{{ recipe.name }}</h1>
     <p><strong>Created by:</strong> {{ recipe.owner.username }}</p>
-    <p><strong>Servings:</strong> {{ recipe.servings }}</p>
-    <p><strong>Ingredients:</strong> {{ recipe.ingredients or "No ingredients listed." }}</p>
-    
-    <p><strong>Average Rating:</strong> 
-        <span style="color: #d4af37;">
-            {% if avg_rating == "Not yet rated" %}
-                {{ avg_rating }}
-            {% else %}
-                {{ avg_rating }} ⭐
-            {% endif %}
-        </span>
-    </p>
+    <p><strong>Ingredients:</strong> {{ recipe.ingredients or "None" }}</p>
+    <p><strong>Avg Rating:</strong> {% if avg_rating == "Not yet rated" %}{{ avg_rating }}{% else %}{{ avg_rating }} ⭐{% endif %}</p>
 
     {% if is_owner %}
-        <p style="color: blue;"><em>You are the owner of this recipe.</em></p>
-        <button onclick="deleteRecipe()" style="color: red;">Delete This Recipe</button>
+        <button onclick="deleteRecipe()" style="color: red;">Delete Recipe</button>
     {% else %}
         <hr>
-        <h3>Rate This Recipe</h3>
-        <select id="stars-input">
-            <option value="5">5 Stars</option>
-            <option value="4">4 Stars</option>
-            <option value="3">3 Stars</option>
-            <option value="2">2 Stars</option>
-            <option value="1">1 Star</option>
-        </select>
-        <button onclick="submitRating()">Submit Rating</button>
+        <div id="rating-display" {% if not user_stars %}style="display:none;"{% endif %}>
+            <p>Your rating: <strong>{{ user_stars }} Stars</strong></p>
+            <button onclick="toggleEdit()">Change Rating</button>
+        </div>
+        <div id="rating-form" {% if user_stars %}style="display:none;"{% endif %}>
+            <h3>Rate this Recipe</h3>
+            <select id="stars-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select>
+            <button onclick="submitRating()">Submit</button>
+            {% if user_stars %}<button onclick="toggleEdit()">Cancel</button>{% endif %}
+        </div>
     {% endif %}
 
     <hr>
     <h3>Comments</h3>
-    <div id="comments-section">
-        {% for c in recipe.comments %}
-            <p><strong>{{ c.username }}:</strong> {{ c.text }}</p>
-        {% endfor %}
-    </div>
-
-    <input type="text" id="new-comment" placeholder="Add a comment...">
-    <button onclick="submitComment()">Post Comment</button>
-
-    <br><br>
-    <a href="{{ url_for('index') }}">Back to Dashboard</a>
+    <div id="comments">{% for c in recipe.comments %}<p><strong>{{ c.username }}:</strong> {{ c.text }}</p>{% endfor %}</div>
+    <input type="text" id="new-comment" placeholder="Comment..."><button onclick="submitComment()">Post</button>
+    <br><br><a href="{{ url_for('index') }}">Back to Dashboard</a>
 
     <script>
+        function toggleEdit() {
+            const d = document.getElementById('rating-display'), f = document.getElementById('rating-form');
+            d.style.display = d.style.display === "none" ? "block" : "none";
+            f.style.display = f.style.display === "none" ? "block" : "none";
+        }
         async function deleteRecipe() {
-            if (confirm('Permanently delete this recipe?')) {
+            if (confirm('Delete?')) {
                 const res = await fetch('/api/recipes/{{ recipe.id }}', { method: 'DELETE' });
                 if (res.ok) window.location.href = '/';
             }
         }
-
         async function submitRating() {
             const stars = document.getElementById('stars-input').value;
             await fetch('/api/recipes/{{ recipe.id }}/rate', {
@@ -66,9 +50,8 @@
             });
             location.reload();
         }
-
         async function submitComment() {
-            const text = document.getElementById('new-comment').value.trim();
+            const text = document.getElementById('new-comment').value;
             if (!text) return;
             await fetch('/api/recipes/{{ recipe.id }}/comment', {
                 method: 'POST',
