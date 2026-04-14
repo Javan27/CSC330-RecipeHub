@@ -3,17 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <title>Recipe Dashboard</title>
-    <style>.recipe-card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }</style>
+    <style>
+        .recipe-card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .rating-text { font-weight: bold; color: #555; }
+    </style>
 </head>
 <body>
-    <h1>Recipe Dashboard</h1>
-    <p>Logged in as: <span id="current-user"></span> | <a href="/logout">Logout</a> | <a href="/search">Search</a></p>
+    <div>
+        <h1>Recipe Dashboard</h1>
+        <p>Logged in as: <span id="current-user"></span> | <a href="/logout">Logout</a> | <a href="/search">Search Recipes</a></p>
+    </div>
     <hr>
-    <h3>Create New Recipe</h3>
-    <input type="text" id="new-recipe-name" placeholder="Recipe Name">
-    <input type="number" id="new-serving-size" placeholder="Servings" min="1">
-    <input type="text" id="new-ingredients" placeholder="Ingredients">
-    <button id="btn-create-recipe">Create</button>
+    <div>
+        <h3>Create New Recipe</h3>
+        <input type="text" id="new-recipe-name" placeholder="Recipe Name">
+        <input type="number" id="new-serving-size" placeholder="Servings" min="1">
+        <input type="text" id="new-ingredients" placeholder="Ingredients (comma separated)">
+        <button id="btn-create-recipe">Create Recipe</button>
+    </div>
     <hr>
     <div id="recipe-grid"></div>
 
@@ -25,29 +32,41 @@
             const grid = document.getElementById('recipe-grid');
             const response = await fetch('/api/recipes');
             const recipes = await response.json();
-            grid.innerHTML = recipes.length ? '' : '<p>No recipes yet.</p>';
+
+            grid.innerHTML = recipes.length ? '' : '<p>No recipes yet.</p>'; 
+
             recipes.forEach(recipe => {
                 const card = document.createElement('div');
                 card.className = "recipe-card";
+                const ratingDisplay = recipe.avg_rating === "Not yet rated" ? 
+                                      recipe.avg_rating : `${recipe.avg_rating} ⭐`;
+
                 card.innerHTML = `
                     <h2><a href="/recipe/${recipe.id}">${recipe.name}</a></h2>
                     <p><em>By: ${recipe.creator}</em></p>
-                    <p>Rating: ${recipe.avg_rating} ⭐ | Servings: ${recipe.servings}</p>
+                    <p><strong>Rating:</strong> <span class="rating-text">${ratingDisplay}</span></p>
+                    <p><strong>Servings:</strong> ${recipe.servings}</p>
                 `;
                 grid.appendChild(card);
             });
         }
 
         document.getElementById('btn-create-recipe').addEventListener('click', async () => {
-            const name = document.getElementById('new-recipe-name').value;
+            const name = document.getElementById('new-recipe-name').value.trim();
             const servings = document.getElementById('new-serving-size').value;
-            const ingredients = document.getElementById('new-ingredients').value;
-            if (!name) return alert('Name required');
+            const ingredients = document.getElementById('new-ingredients').value.trim();
+
+            if (!name) return alert('Enter a recipe name!');
+
             await fetch('/api/recipes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, servings, ingredients })
             });
+            
+            document.getElementById('new-recipe-name').value = '';
+            document.getElementById('new-serving-size').value = '';
+            document.getElementById('new-ingredients').value = '';
             renderGrid();
         });
 
