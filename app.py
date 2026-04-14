@@ -30,6 +30,20 @@ class Recipe(db.Model):
    # Foreign Key: Links the recipe to a specific User ID
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
+#Models for Social Feedback
+class Rating(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    stars = db.Column(db.Integer, nullable=False) #1-5
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
+    username = db.Column(db.String(80))
+
 #Routes
 
 @app.route('/')
@@ -128,6 +142,30 @@ def delete_recipe(recipe_id):
         db.session.commit()
         return jsonify({'message': 'Deleted'}), 200
     return jsonify({'error': 'Not found or unauthorized'}), 404
+    
+@app.route('/api/recipes/<int:recipe_id>/rate', methods=['POST'])
+def rate_recipe(recipe_id):
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
+    data = request.json
+    #Check if user already rated this recipe (update) or create new
+    rating = Rating.query.filter_by(user_id=session['user_id'], recipe_id=recipe_id).first()
+    if rating:
+        rating.stars = data['stars']
+    else:
+        rating = Rating(stars=data['stars'], user_id=session['user_id'], recipe_id=recipe_id)
+        db.session.add(rating)
+    db.session.commit()
+    return jsonify({'message': 'Rating saved'}), 200
+
+@app.route('/api/recipes/<int:recipe_id>/comment', methods=['POST'])
+def add_comment(recipe_id):
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
+    data = request.json
+    new_comment = Comment(text=data['text'], user_id=session['user_id'], recipe_id=recipe_id, username=session['username'])
+    db.session.add(new_comment)
+    db.session.commit()
+    return jsonify({'message': 'Comment added'}), 201
+
 
 if __name__ == '__main__':
     with app.app_context():
