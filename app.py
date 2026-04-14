@@ -107,12 +107,22 @@ def search():
 
 @app.route('/api/recipes', methods=['GET'])
 def get_recipes():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    #Filter: ONLY get recipes belonging to the logged-in user
-    user_recipes = Recipe.query.filter_by(user_id=session['user_id']).all()
-    return jsonify([{'id': r.id, 'name': r.name, 'servings': r.servings} for r in user_recipes])
+    # ... session check ...
+    all_recipes = Recipe.query.all() #Social loop: see ALL recipes to rate them
+    output = []
+    for r in all_recipes:
+        ratings = Rating.query.filter_by(recipe_id=r.id).all()
+        avg_rating = sum([rt.stars for rt in ratings]) / len(ratings) if ratings else 0
+        comments = Comment.query.filter_by(recipe_id=r.id).all()
+        
+        output.append({
+            'id': r.id, 
+            'name': r.name, 
+            'servings': r.servings,
+            'avg_rating': round(avg_rating, 1),
+            'comments': [{'user': c.username, 'text': c.text} for c in comments]
+        })
+    return jsonify(output)
 
 @app.route('/api/recipes', methods=['POST'])
 def create_recipe():
