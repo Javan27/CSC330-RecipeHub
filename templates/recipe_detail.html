@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head><title>{{ recipe.name }}</title></head>
+<body>
+    <h1>{{ recipe.name }}</h1>
+    <p><strong>Created by:</strong> {{ recipe.owner.username }}</p>
+    <p><strong>Servings:</strong> {{ recipe.servings }}</p>
+    <p><strong>Ingredients:</strong> {{ recipe.ingredients or "None listed" }}</p>
+    <p><strong>Avg Rating:</strong> {{ avg_rating }} ⭐</p>
+
+    {% if is_owner %}
+        <button onclick="deleteRecipe()" style="color: red;">Delete Recipe</button>
+    {% endif %}
+
+    <hr>
+    <h3>Rate This Recipe</h3>
+    <select id="stars"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+    <button onclick="rate()">Rate</button>
+
+    <h3>Comments</h3>
+    <div id="comments">
+        {% for c in recipe.comments %}<p><strong>{{ c.username }}:</strong> {{ c.text }}</p>{% endfor %}
+    </div>
+    <input type="text" id="com-text" placeholder="Add a comment...">
+    <button onclick="comment()">Post</button>
+    <br><br>
+    <a href="{{ url_for('index') }}">Back to Dashboard</a>
+
+    <script>
+        async function deleteRecipe() {
+            if (confirm('Delete permanently?')) {
+                const res = await fetch('/api/recipes/{{ recipe.id }}', { method: 'DELETE' });
+                if (res.ok) window.location.href = '/';
+            }
+        }
+        async function rate() {
+            await fetch('/api/recipes/{{ recipe.id }}/rate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stars: document.getElementById('stars').value })
+            });
+            location.reload();
+        }
+        async function comment() {
+            const text = document.getElementById('com-text').value;
+            if (!text) return;
+            await fetch('/api/recipes/{{ recipe.id }}/comment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            location.reload();
+        }
+    </script>
+</body>
+</html>
