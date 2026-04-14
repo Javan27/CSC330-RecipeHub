@@ -1,32 +1,26 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Search Recipes</title>
-</head>
+<head><title>Search Results</title></head>
 <body>
     <h1>Search for Recipes</h1>
     <form action="/search" method="GET">
-        <input type="text" name="q" placeholder="Search by name or ingredient..." value="{{ query }}">
+        <input type="text" name="q" placeholder="Search..." value="{{ query }}">
         <button type="submit">Search</button>
     </form>
-
     <hr>
-
     {% if query %}
         <h2>Results for "{{ query }}":</h2>
         {% if results %}
             <ul>
                 {% for recipe in results %}
-                    <li><strong>{{ recipe.name }}</strong> - Servings: {{ recipe.servings }}<br>
-                    <em>Ingredients: {{ recipe.ingredients }}</em></li>
+                    <li>
+                        <a href="/recipe/{{ recipe.id }}"><strong>{{ recipe.name }}</strong></a> 
+                        - By: {{ recipe.owner.username }}
+                    </li>
                 {% endfor %}
             </ul>
-        {% else %}
-            <p>No recipes or ingredients found.</p>
-        {% endif %}
+        {% else %}<p>No results found.</p>{% endif %}
     {% endif %}
-    
-    <br>
     <a href="{{ url_for('index') }}">Back to Dashboard</a>
 </body>
 </html>
