@@ -4,7 +4,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 app = Flask(__name__)
-#Secure key for session encryption
 app.secret_key = 'super_secret_key_for_networking_lab'
 
 #Database Configuration
@@ -20,7 +19,6 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    #Links User to their created recipes
     recipes = db.relationship('Recipe', backref='owner', lazy=True)
 
 class Recipe(db.Model):
@@ -29,7 +27,6 @@ class Recipe(db.Model):
     servings = db.Column(db.Integer, nullable=False)
     ingredients = db.Column(db.Text, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    #Cascade ensures that deleting a recipe deletes its social data
     ratings = db.relationship('Rating', backref='recipe', lazy=True, cascade="all, delete-orphan")
     comments = db.relationship('Comment', backref='recipe', lazy=True, cascade="all, delete-orphan")
 
@@ -61,18 +58,23 @@ def recipe_detail(recipe_id):
     
     recipe = Recipe.query.get_or_404(recipe_id)
     
-    #Calculate Average Rating
+    #Global average calculation
     ratings = Rating.query.filter_by(recipe_id=recipe_id).all()
     if ratings:
         avg_val = round(sum([r.stars for r in ratings]) / len(ratings), 1)
     else:
         avg_val = "Not yet rated"
         
+    #Check for current user's specific rating
+    user_rating = Rating.query.filter_by(recipe_id=recipe_id, user_id=session['user_id']).first()
+    user_stars = user_rating.stars if user_rating else None
+    
     is_owner = (recipe.user_id == session['user_id'])
     
     return render_template('recipe_detail.html', 
                            recipe=recipe, 
                            avg_rating=avg_val, 
+                           user_stars=user_stars,
                            is_owner=is_owner)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -81,7 +83,6 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
             session['username'] = user.username
@@ -95,15 +96,11 @@ def create_account():
         username = request.form['username']
         password = request.form['password']
         confirm = request.form['confirm_password']
-
         if password != confirm:
             return "Passwords do not match", 400
-        
         if User.query.filter_by(username=username).first():
             return "Username already exists", 400
-
-        hashed_pw = generate_password_hash(password)
-        new_user = User(username=username, password=hashed_pw)
+        new_user = User(username=username, password=generate_password_hash(password))
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for('login'))
@@ -119,21 +116,12 @@ def search():
     query = request.args.get('q', '').strip()
     results_data = []
     if query:
-        #Searches both Name and Ingredients
         results = Recipe.query.filter(
             (Recipe.name.contains(query)) | (Recipe.ingredients.contains(query))
         ).all()
-        
         for r in results:
-            match_context = None
-            if r.ingredients and query.lower() in r.ingredients.lower():
-                match_context = f"Has ingredient: {query}"
-            
-            results_data.append({
-                'recipe': r,
-                'context': match_context
-            })
-            
+            match_context = f"Has ingredient: {query}" if r.ingredients and query.lower() in r.ingredients.lower() else None
+            results_data.append({'recipe': r, 'context': match_context})
     return render_template('search_results.html', results=results_data, query=query)
 
 #API Routes
@@ -142,47 +130,29 @@ def search():
 def get_recipes():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
     all_recipes = Recipe.query.all()
     output = []
     for r in all_recipes:
         ratings = Rating.query.filter_by(recipe_id=r.id).all()
-        if ratings:
-            avg_val = round(sum([rt.stars for rt in ratings]) / len(ratings), 1)
-        else:
-            avg_val = "Not yet rated"
-
+        avg_val = round(sum([rt.stars for rt in ratings]) / len(ratings), 1) if ratings else "Not yet rated"
         output.append({
-            'id': r.id, 
-            'name': r.name, 
-            'servings': r.servings,
-            'creator': r.owner.username, 
-            'avg_rating': avg_val
+            'id': r.id, 'name': r.name, 'servings': r.servings,
+            'creator': r.owner.username, 'avg_rating': avg_val
         })
     return jsonify(output)
 
 @app.route('/api/recipes', methods=['POST'])
 def create_recipe():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     data = request.json
-    new_recipe = Recipe(
-        name=data['name'], 
-        servings=data['servings'],
-        ingredients=data.get('ingredients'),
-        user_id=session['user_id']
-    )
+    new_recipe = Recipe(name=data['name'], servings=data['servings'], ingredients=data.get('ingredients'), user_id=session['user_id'])
     db.session.add(new_recipe)
     db.session.commit()
     return jsonify({'id': new_recipe.id}), 201
 
 @app.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
 def delete_recipe(recipe_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    #Ownership verification
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     recipe = Recipe.query.filter_by(id=recipe_id, user_id=session['user_id']).first()
     if recipe:
         db.session.delete(recipe)
@@ -192,43 +162,24 @@ def delete_recipe(recipe_id):
 
 @app.route('/api/recipes/<int:recipe_id>/rate', methods=['POST'])
 def rate_recipe(recipe_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     recipe = Recipe.query.get_or_404(recipe_id)
-    #Block self-rating logic
-    if recipe.user_id == session['user_id']:
-        return jsonify({'error': 'Cannot rate own recipe'}), 403
-
+    if recipe.user_id == session['user_id']: return jsonify({'error': 'Cannot rate own recipe'}), 403
     data = request.json
     rating = Rating.query.filter_by(user_id=session['user_id'], recipe_id=recipe_id).first()
-    
-    if rating:
-        rating.stars = data['stars']
-    else:
-        new_rating = Rating(stars=data['stars'], user_id=session['user_id'], recipe_id=recipe_id)
-        db.session.add(new_rating)
-        
+    if rating: rating.stars = data['stars']
+    else: db.session.add(Rating(stars=data['stars'], user_id=session['user_id'], recipe_id=recipe_id))
     db.session.commit()
-    return jsonify({'message': 'Rating saved'}), 200
+    return jsonify({'message': 'Rated'}), 200
 
 @app.route('/api/recipes/<int:recipe_id>/comment', methods=['POST'])
 def add_comment(recipe_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     data = request.json
-    new_comment = Comment(
-        text=data['text'], 
-        user_id=session['user_id'], 
-        recipe_id=recipe_id, 
-        username=session['username']
-    )
-    db.session.add(new_comment)
+    db.session.add(Comment(text=data['text'], user_id=session['user_id'], recipe_id=recipe_id, username=session['username']))
     db.session.commit()
-    return jsonify({'message': 'Comment added'}), 201
+    return jsonify({'message': 'Commented'}), 201
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+    with app.app_context(): db.create_all()
     app.run(debug=True, port=5000)
