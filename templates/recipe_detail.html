@@ -1,58 +1,74 @@
 <!DOCTYPE html>
 <html>
-<head><title>{{ recipe.name }}</title></head>
+<head>
+    <title>{{ recipe.name }} Details</title>
+</head>
 <body>
     <h1>{{ recipe.name }}</h1>
     <p><strong>Created by:</strong> {{ recipe.owner.username }}</p>
     <p><strong>Servings:</strong> {{ recipe.servings }}</p>
-    <p><strong>Ingredients:</strong> {{ recipe.ingredients or "None listed" }}</p>
-    <p><strong>Avg Rating:</strong> {{ avg_rating }} ⭐</p>
+    <p><strong>Ingredients:</strong> {{ recipe.ingredients or "No ingredients listed." }}</p>
+    
+    <p><strong>Average Rating:</strong> 
+        <span style="color: #d4af37;">
+            {% if avg_rating == "Not yet rated" %}
+                {{ avg_rating }}
+            {% else %}
+                {{ avg_rating }} ⭐
+            {% endif %}
+        </span>
+    </p>
 
     {% if is_owner %}
-        <button onclick="deleteRecipe()" style="color: red;">Delete Recipe</button>
+        <p style="color: blue;"><em>You are the owner of this recipe.</em></p>
+        <button onclick="deleteRecipe()" style="color: red;">Delete This Recipe</button>
+    {% else %}
+        <hr>
+        <h3>Rate This Recipe</h3>
+        <select id="stars-input">
+            <option value="5">5 Stars</option>
+            <option value="4">4 Stars</option>
+            <option value="3">3 Stars</option>
+            <option value="2">2 Stars</option>
+            <option value="1">1 Star</option>
+        </select>
+        <button onclick="submitRating()">Submit Rating</button>
     {% endif %}
 
     <hr>
-    {% if not is_owner %}
-    <h3>Rate This Recipe</h3>
-    <select id="stars">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-    </select>
-    <button onclick="rate()">Rate</button>
-{% else %}
-    <p><em>Note: You cannot rate your own recipe.</em></p>
-{% endif %}
-
     <h3>Comments</h3>
-    <div id="comments">
-        {% for c in recipe.comments %}<p><strong>{{ c.username }}:</strong> {{ c.text }}</p>{% endfor %}
+    <div id="comments-section">
+        {% for c in recipe.comments %}
+            <p><strong>{{ c.username }}:</strong> {{ c.text }}</p>
+        {% endfor %}
     </div>
-    <input type="text" id="com-text" placeholder="Add a comment...">
-    <button onclick="comment()">Post</button>
+
+    <input type="text" id="new-comment" placeholder="Add a comment...">
+    <button onclick="submitComment()">Post Comment</button>
+
     <br><br>
     <a href="{{ url_for('index') }}">Back to Dashboard</a>
 
     <script>
         async function deleteRecipe() {
-            if (confirm('Delete permanently?')) {
+            if (confirm('Permanently delete this recipe?')) {
                 const res = await fetch('/api/recipes/{{ recipe.id }}', { method: 'DELETE' });
                 if (res.ok) window.location.href = '/';
             }
         }
-        async function rate() {
+
+        async function submitRating() {
+            const stars = document.getElementById('stars-input').value;
             await fetch('/api/recipes/{{ recipe.id }}/rate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ stars: document.getElementById('stars').value })
+                body: JSON.stringify({ stars: parseInt(stars) })
             });
             location.reload();
         }
-        async function comment() {
-            const text = document.getElementById('com-text').value;
+
+        async function submitComment() {
+            const text = document.getElementById('new-comment').value.trim();
             if (!text) return;
             await fetch('/api/recipes/{{ recipe.id }}/comment', {
                 method: 'POST',
