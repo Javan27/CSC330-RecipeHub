@@ -2,53 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Recipe Dashboard</title>
-    <style>
-        .recipe-card {
-            border: 1px solid #ccc;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-        }
-        .comment-box {
-            background-color: #f9f9f9;
-            padding: 5px 10px;
-            border-radius: 4px;
-            margin-bottom: 5px;
-            font-size: 0.9em;
-        }
-    </style>
+    <title>Recipe Dashboard</title>
+    <style>.recipe-card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }</style>
 </head>
 <body>
-
-    <div>
-        <h1>Recipe Dashboard</h1>
-        <p><strong>Logged in as:</strong> <span id="current-user"></span></p>
-        <a href="/logout"><button type="button">Logout</button></a>
-        <a href="/search"><button type="button">Search Recipes</button></a>
-    </div>
-
+    <h1>Recipe Dashboard</h1>
+    <p>Logged in as: <span id="current-user"></span> | <a href="/logout">Logout</a> | <a href="/search">Search</a></p>
     <hr>
-
-    <div>
-        <h3>Create New Recipe</h3>
-        <label for="new-recipe-name">Recipe Name:</label>
-        <input type="text" id="new-recipe-name" placeholder="e.g., Chocolate Chip Cookies">
-        
-        <label for="new-serving-size">Servings:</label>
-        <input type="number" id="new-serving-size" placeholder="e.g., 4" min="1">
-        
-        <label for="new-ingredients">Ingredients:</label>
-        <input type="text" id="new-ingredients" placeholder="e.g., Flour, Sugar, Butter">
-        
-        <button id="btn-create-recipe">Create Recipe</button>
-    </div>
-
+    <h3>Create New Recipe</h3>
+    <input type="text" id="new-recipe-name" placeholder="Recipe Name">
+    <input type="number" id="new-serving-size" placeholder="Servings" min="1">
+    <input type="text" id="new-ingredients" placeholder="Ingredients">
+    <button id="btn-create-recipe">Create</button>
     <hr>
-
-    <div id="recipe-grid">
-        </div>
+    <div id="recipe-grid"></div>
 
     <script>
         const currentUsername = "{{ username }}";
@@ -56,128 +23,33 @@
 
         async function renderGrid() {
             const grid = document.getElementById('recipe-grid');
-            
-            try {
-                const response = await fetch('/api/recipes');
-                const recipes = await response.json();
-
-                grid.innerHTML = ''; 
-
-                if (recipes.length === 0) {
-                    grid.innerHTML = `<p>No recipes yet. Create one above!</p>`;
-                    return;
-                }
-
-                recipes.forEach(recipe => {
-                    const card = document.createElement('div');
-                    card.className = "recipe-card";
-                    card.innerHTML = `
-                        <h2>${recipe.name}</h2>
-                        <p><strong>Servings:</strong> ${recipe.servings}</p>
-                        <p><strong>Avg Rating:</strong> ${recipe.avg_rating} ⭐</p>
-                        
-                        <div>
-                            <label>Rate this recipe: </label>
-                            <select onchange="rateRecipe(${recipe.id}, this.value)">
-                                <option value="">Select Stars</option>
-                                <option value="1">1 Star</option>
-                                <option value="2">2 Stars</option>
-                                <option value="3">3 Stars</option>
-                                <option value="4">4 Stars</option>
-                                <option value="5">5 Stars</option>
-                            </select>
-                        </div>
-
-                        <div style="margin-top: 15px;">
-                            <h4>Comments</h4>
-                            <div id="comments-list-${recipe.id}">
-                                ${recipe.comments.map(c => `
-                                    <div class="comment-box">
-                                        <strong>${c.user}:</strong> ${c.text}
-                                    </div>
-                                `).join('')}
-                            </div>
-                            <input type="text" id="comment-input-${recipe.id}" placeholder="Add a comment...">
-                            <button onclick="postComment(${recipe.id})">Post</button>
-                        </div>
-
-                        <hr>
-                        <button onclick="deleteRecipe(${recipe.id})">Delete Recipe</button>
-                        <p><small>Database ID: ${recipe.id}</small></p>
-                    `;
-                    grid.appendChild(card);
-                });
-            } catch (err) {
-                console.error("Error loading recipes:", err);
-                grid.innerHTML = `<p>Error connecting to database.</p>`;
-            }
+            const response = await fetch('/api/recipes');
+            const recipes = await response.json();
+            grid.innerHTML = recipes.length ? '' : '<p>No recipes yet.</p>';
+            recipes.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = "recipe-card";
+                card.innerHTML = `
+                    <h2><a href="/recipe/${recipe.id}">${recipe.name}</a></h2>
+                    <p><em>By: ${recipe.creator}</em></p>
+                    <p>Rating: ${recipe.avg_rating} ⭐ | Servings: ${recipe.servings}</p>
+                `;
+                grid.appendChild(card);
+            });
         }
 
-        //POST a new recipe
         document.getElementById('btn-create-recipe').addEventListener('click', async () => {
-            const nameInput = document.getElementById('new-recipe-name');
-            const servingInput = document.getElementById('new-serving-size');
-            const ingredientsInput = document.getElementById('new-ingredients');
-            
-            const name = nameInput.value.trim();
-            const servings = servingInput.value.trim() || '4';
-            const ingredients = ingredientsInput.value.trim();
-
-            if (!name) {
-                alert('Enter a recipe name!');
-                return;
-            }
-
-            const response = await fetch('/api/recipes', {
+            const name = document.getElementById('new-recipe-name').value;
+            const servings = document.getElementById('new-serving-size').value;
+            const ingredients = document.getElementById('new-ingredients').value;
+            if (!name) return alert('Name required');
+            await fetch('/api/recipes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, servings, ingredients })
             });
-
-            if (response.ok) {
-                nameInput.value = ''; 
-                servingInput.value = ''; 
-                ingredientsInput.value = '';
-                renderGrid(); 
-            }
-        });
-
-        //POST a rating
-        async function rateRecipe(recipeId, stars) {
-            if (!stars) return;
-            await fetch(`/api/recipes/${recipeId}/rate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ stars: parseInt(stars) })
-            });
             renderGrid();
-        }
-
-        //POST a comment
-        async function postComment(recipeId) {
-            const input = document.getElementById(`comment-input-${recipeId}`);
-            const text = input.value.trim();
-            if (!text) return;
-
-            const response = await fetch(`/api/recipes/${recipeId}/comment`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text })
-            });
-
-            if (response.ok) {
-                input.value = '';
-                renderGrid();
-            }
-        }
-
-        //DELETE a recipe
-        async function deleteRecipe(recipeId) {
-            if (confirm('Are you sure?')) {
-                await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE' });
-                renderGrid();
-            }
-        }
+        });
 
         renderGrid();
     </script>
