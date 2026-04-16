@@ -38,11 +38,13 @@
                     <p><em>By: ${recipe.creator}</em></p>
                     <p><strong>Rating:</strong> ${rating}</p>
                     <p><strong>Servings:</strong> ${recipe.servings}</p>
+		    <p><strong>Tags:</strong> ${recipe.tags || 'None'}</p>
                 `;
                 grid.appendChild(card);
             });
         }
 
+        
         document.getElementById('btn-create-recipe').addEventListener('click', async () => {
             const nameEl = document.getElementById('new-recipe-name');
             const servingEl = document.getElementById('new-serving-size');
@@ -54,10 +56,10 @@
             const response = await fetch('/api/recipes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    name: nameEl.value, 
-                    servings: servingEl.value, 
-                    ingredients: ingredientsEl.value 
+                body: JSON.stringify({
+                    name: nameEl.value,
+                    servings: servingEl.value,
+                    ingredients: ingredientsEl.value
                 })
             });
 
@@ -69,7 +71,6 @@
                 renderGrid();
             }
         });
-        renderGrid();
     </script>
 </body>
 </html>
