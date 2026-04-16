@@ -26,6 +26,7 @@ class Recipe(db.Model):
     name = db.Column(db.String(100), nullable=False)
     servings = db.Column(db.Integer, nullable=False)
     ingredients = db.Column(db.Text, nullable=True)
+    tags = db.Column(db.String(200), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     ratings = db.relationship('Rating', backref='recipe', lazy=True, cascade="all, delete-orphan")
     comments = db.relationship('Comment', backref='recipe', lazy=True, cascade="all, delete-orphan")
@@ -157,7 +158,8 @@ def create_recipe():
     new_recipe = Recipe(
         name=data['name'], 
         servings=servings_val, 
-        ingredients=data.get('ingredients'), 
+        ingredients=data.get('ingredients'),
+        tags=data.get('tags'),  
         user_id=session['user_id']
     )
     db.session.add(new_recipe)
