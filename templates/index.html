@@ -56,7 +56,7 @@
             const nameEl = document.getElementById('new-recipe-name');
             const servingEl = document.getElementById('new-serving-size');
             const ingredientsEl = document.getElementById('new-ingredients');
-	    const tagsEl = document.getElementByID('new-tags');
+	    const tagsEl = document.getElementByIdS('new-tags');
 
             if (!nameEl.value.trim()) return alert('Name required');
             if (parseInt(servingEl.value) < 1) return alert('Servings must be 1 or more');
