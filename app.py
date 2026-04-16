@@ -118,7 +118,9 @@ def search():
     results_data = []
     if query:
         results = Recipe.query.filter(
-            (Recipe.name.contains(query)) | (Recipe.ingredients.contains(query))
+            (Recipe.name.contains(query)) |
+            (Recipe.ingredients.contains(query))|
+            (Recipe.tags.contains(query))
         ).all()
         for r in results:
             match_context = f"Has ingredient: {query}" if r.ingredients and query.lower() in r.ingredients.lower() else None
@@ -138,7 +140,8 @@ def get_recipes():
         avg_val = round(sum([rt.stars for rt in ratings]) / len(ratings), 1) if ratings else "Not yet rated"
         output.append({
             'id': r.id, 'name': r.name, 'servings': r.servings,
-            'creator': r.owner.username, 'avg_rating': avg_val
+            'tags': r.tags, 'creator': r.owner.username,
+             'avg_rating': avg_val
         })
     return jsonify(output)
 
