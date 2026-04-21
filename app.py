@@ -134,22 +134,21 @@ def search():
     results_data = []
     
     if query:
-        # We JOIN the Ingredient table so we can look at Ingredient.name
-        results = Recipe.query.join(Ingredient).filter(
+        results = Recipe.query.filter(
             (Recipe.name.contains(query)) |
-            (Ingredient.name.contains(query)) |
+            (Recipe.ingredients.contains(query)) |
             (Recipe.tags.contains(query))
-        ).distinct().all()
-
-        for r in results:
-            # Check if any of the associated ingredients match the query
-            has_ing = any(query.lower() in ing.name.lower() for ing in r.ingredients)
-            match_context = f"Has ingredient: {query}" if has_ing else None
+        ).all()
+        
+        for r in results:         
+            match_context = f"Has ingredient: {query}" if r.ingredients and query.lower() in r.ingredients.lower() else None
             
-            results_data.append({'recipe': r, 'context': match_context})
+            results_data.append({
+                'recipe': r, 
+                'context': match_context
+            })
             
     return render_template('search_results.html', results=results_data, query=query)
-
 #API Routes
 
 @app.route('/api/recipes', methods=['GET'])
