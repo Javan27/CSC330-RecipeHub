@@ -21,16 +21,24 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)
     recipes = db.relationship('Recipe', backref='owner', lazy=True)
 
+class Ingredient(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    quantity = db.Column(db.String(50), nullable=False) 
+    unit = db.Column(db.String(20), nullable=True)     
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
+
 class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     servings = db.Column(db.Integer, nullable=False)
-    ingredients = db.Column(db.Text, nullable=True)
+    instructions = db.Column(db.Text, nullable=True)
+    ingredients = db.relationship('Ingredient', backref='recipe', lazy=True, cascade="all, delete-orphan")
     tags = db.Column(db.String(200), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     ratings = db.relationship('Rating', backref='recipe', lazy=True, cascade="all, delete-orphan")
     comments = db.relationship('Comment', backref='recipe', lazy=True, cascade="all, delete-orphan")
-
+    
 class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     stars = db.Column(db.Integer, nullable=False)
@@ -148,26 +156,33 @@ def get_recipes():
 
 @app.route('/api/recipes', methods=['POST'])
 def create_recipe():
-    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
     data = request.json
-    
-    # Validation: Ensure servings is an integer and at least 1
-    try:
-        servings_val = int(data.get('servings', 1))
-        if servings_val < 1: servings_val = 1
-    except (ValueError, TypeError):
-        servings_val = 1
 
     new_recipe = Recipe(
-        name=data['name'], 
-        servings=servings_val, 
-        ingredients=data.get('ingredients'),
-        tags=data.get('tags'),  
+        name=data['name'],
+        servings=data['servings'],
+        instructions=data.get('instructions', ''), 
+        tags=data['tags'],
         user_id=session['user_id']
     )
+    
     db.session.add(new_recipe)
+    db.session.flush() 
+
+    for ing_data in data.get('ingredients', []):
+        new_ingredient = Ingredient(
+            quantity=ing_data['quantity'],
+            unit=ing_data['unit'],
+            name=ing_data['name'],
+            recipe_id=new_recipe.id  
+        )
+        db.session.add(new_ingredient)
+
     db.session.commit()
-    return jsonify({'id': new_recipe.id}), 201
+    return jsonify({'message': 'Recipe created successfully!', 'id': new_recipe.id}), 201
 
 @app.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
 def delete_recipe(recipe_id):
