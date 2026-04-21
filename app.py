@@ -132,15 +132,22 @@ def logout():
 def search():
     query = request.args.get('q', '').strip()
     results_data = []
+    
     if query:
-        results = Recipe.query.filter(
+        # We JOIN the Ingredient table so we can look at Ingredient.name
+        results = Recipe.query.join(Ingredient).filter(
             (Recipe.name.contains(query)) |
-            (Recipe.ingredients.contains(query))|
+            (Ingredient.name.contains(query)) |
             (Recipe.tags.contains(query))
-        ).all()
+        ).distinct().all()
+
         for r in results:
-            match_context = f"Has ingredient: {query}" if r.ingredients and query.lower() in r.ingredients.lower() else None
+            # Check if any of the associated ingredients match the query
+            has_ing = any(query.lower() in ing.name.lower() for ing in r.ingredients)
+            match_context = f"Has ingredient: {query}" if has_ing else None
+            
             results_data.append({'recipe': r, 'context': match_context})
+            
     return render_template('search_results.html', results=results_data, query=query)
 
 #API Routes
