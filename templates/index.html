@@ -13,7 +13,17 @@
         <h3>Create New Recipe</h3>
         <input type="text" id="new-recipe-name" placeholder="Recipe Name">
         <input type="number" id="new-serving-size" placeholder="Servings" min="1" value="1">
-        <input type="text" id="new-ingredients" placeholder="Ingredients">
+        	<div id="ingredient-container">
+    	<div class="ingredient-row">
+        	<input type="text" class="ing-qty" placeholder="Qty">
+        	<input type="text" class="ing-unit" placeholder="Unit">
+        	<input type="text" class="ing-name" placeholder="Ingredient Name">
+    	</div>
+	</div>
+	<button type="button" id="add-ingredient-btn">+ Add Ingredient</button>
+
+	<br>
+	<textarea id="new-instructions" placeholder="Instructions"></textarea>
 	<select id="new-tags">
     		<option value="">No Tag</option>
     		<option value="keto">Keto</option>
@@ -55,36 +65,49 @@
         }
 
         
-        document.getElementById('btn-create-recipe').addEventListener('click', async () => {
-            const nameEl = document.getElementById('new-recipe-name');
-            const servingEl = document.getElementById('new-serving-size');
-            const ingredientsEl = document.getElementById('new-ingredients');
-	        const tagsEl = document.getElementById('new-tags');
-	        const isPublicEl = document.getElementById('new-is-public');
+         document.getElementById('btn-create-recipe').addEventListener('click', async () => {
+    const nameEl = document.getElementById('new-recipe-name');
+    const servingEl = document.getElementById('new-serving-size');
+    const instructionsEl = document.getElementById('new-instructions');
+    const tagsEl = document.getElementById('new-tags');
+	const isPublicEl = document.getElementById('new-is-public');
 
-            if (!nameEl.value.trim()) return alert('Name required');
-            if (parseInt(servingEl.value) < 1) return alert('Servings must be 1 or more');
+    // Collect the multiple rows
+    const rows = document.querySelectorAll('.ingredient-row');
+    const ingredients = Array.from(rows).map(row => ({
+        quantity: row.querySelector('.ing-qty').value,
+        unit: row.querySelector('.ing-unit').value,
+        name: row.querySelector('.ing-name').value
+    })).filter(ing => ing.name.trim() !== ""); 
 
-            const response = await fetch('/api/recipes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: nameEl.value,
-                    servings: servingEl.value,
-                    ingredients: ingredientsEl.value,
-		    tags: tagsEl.value
-                })
-            });
+    const response = await fetch('/api/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: nameEl.value,
+            servings: servingEl.value,
+            instructions: instructionsEl.value,
+            ingredients: ingredients, // Send as a list
+            tags: tagsEl.value
+        })
+    });
 
-            if (response.ok) {
-                // Bug Fix: Clear the text boxes after success
-                nameEl.value = '';
-                servingEl.value = '1';
-                ingredientsEl.value = '';
-		tagsEl.value = '';
-                renderGrid();
-            }
-        });
+    if (response.ok) {
+        renderGrid();
+    }
+});
+document.getElementById('add-ingredient-btn').addEventListener('click', () => {
+    const container = document.getElementById('ingredient-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'ingredient-row';
+    newRow.innerHTML = `
+        <input type="text" class="ing-qty" placeholder="Qty">
+        <input type="text" class="ing-unit" placeholder="Unit">
+        <input type="text" class="ing-name" placeholder="Ingredient Name">
+    `;
+    container.appendChild(newRow);
+});
     </script>
 </body>
 </html>
+ 

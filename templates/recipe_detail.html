@@ -5,7 +5,17 @@
     <h1>{{ recipe.name }}</h1>
     <p><strong>Created by:</strong> {{ recipe.owner.username }}</p>
     <p><strong>Servings:</strong> {{ recipe.servings }}</p>
-    <p><strong>Ingredients:</strong> {{ recipe.ingredients or "None listed" }}</p>
+    <p><strong>Tags:</strong> {{ recipe.tags if recipe.tags else "None" }}</p>
+    <p><strong>Ingredients:</strong></p>
+    	<ul>
+    	{% for ing in recipe.ingredients %}
+        	<li>{{ ing.quantity }} {{ ing.unit }} {{ ing.name }}</li>
+    	{% endfor %}
+    	{% if not recipe.ingredients %}<li>None listed</li>{% endif %}
+	</ul>
+
+<p><strong>Instructions:</strong></p>
+<p>{{ recipe.instructions if recipe.instructions else "No instructions provided." }}</p>
     <p><strong>Avg Rating:</strong> {% if avg_rating == "Not yet rated" %}{{ avg_rating }}{% else %}{{ avg_rating }} ⭐{% endif %}</p>
 
     {% if is_owner %}
