@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>Recipe Dashboard</h1>
-    <p>Logged in as: <span id="current-user"></span> | <a href="/logout">Logout</a> | <a href="/search">Search Recipes</a></p>
+    <p>Logged in as: <span id="current-user"></span> | <a href="/logout">Logout</a> | <a href="/search">Search Recipes| <a href="{{ url_for('index') }}">Profile Dashboard</a>| <a href="/feed">Global Feed</a></p>
     <hr>
     <div>
         <h3>Create New Recipe</h3>
@@ -88,7 +88,8 @@
             servings: servingEl.value,
             instructions: instructionsEl.value,
             ingredients: ingredients, // Send as a list
-            tags: tagsEl.value
+            tags: tagsEl.value,
+            is_public: isPublicEl.checked
         })
     });
 

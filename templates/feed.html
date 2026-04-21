@@ -6,6 +6,7 @@
     <title>Public Recipe Feed</title>
 </head>
 <body>
+    <p>Logged in as: <span> {{username}} </span> | <a href="/logout">Logout</a> | <a href="/search">Search Recipes| <a href="{{ url_for('index') }}">Profile Dashboard</a>| <a href="/feed">Global Feed</a></p>
     {%if recipes %}
         <h1>Public Recipe Feed</h1>
         <ul>
@@ -13,7 +14,13 @@
                 <li>
                     <h2>{{ recipe.name }}</h2>
                     <p>Servings {{ recipe.servings }}</p>
-                    <p>Ingredients: {{ recipe.ingredients }}</p>
+                    <p>Ingredients: 
+                        <ul>
+                            {% for ingredient in recipe.ingredients %}
+                                <li>{{ ingredient.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    </p>
                     <p>Instructions: {{ recipe.instructions }}</p>
                     <p>By: {{ recipe.owner.username }}</p>
                 </li>
