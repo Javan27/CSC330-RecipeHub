@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Recipe Feed</title>
+</head>
+<body>
+    {%if recipes %}
+        <h1>Public Recipe Feed</h1>
+        <ul>
+            {% for recipe in recipes %}
+                <li>
+                    <h2>{{ recipe.name }}</h2>
+                    <p>Servings {{ recipe.servings }}</p>
+                    <p>Ingredients: {{ recipe.ingredients }}</p>
+                    <p>Instructions: {{ recipe.instructions }}</p>
+                    <p>By: {{ recipe.owner.username }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No public recipes available.</p>
+    {% endif %}
+</body>
+</html>

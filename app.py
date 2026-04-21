@@ -27,6 +27,7 @@ class Recipe(db.Model):
     servings = db.Column(db.Integer, nullable=False)
     ingredients = db.Column(db.Text, nullable=True)
     tags = db.Column(db.String(200), nullable=True)
+    is_public = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     ratings = db.relationship('Rating', backref='recipe', lazy=True, cascade="all, delete-orphan")
     comments = db.relationship('Comment', backref='recipe', lazy=True, cascade="all, delete-orphan")
@@ -45,6 +46,13 @@ class Comment(db.Model):
     username = db.Column(db.String(80))
 
 #Page Routes
+
+@app.route('/feed')
+def feed():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    recipes = Recipe.query.filter_by(is_public=True).order_by(Recipe.id.desc()).all()
+    return render_template('feed.html', recipes=recipes, username=session.get('username'))
 
 @app.route('/')
 def index():
@@ -163,6 +171,7 @@ def create_recipe():
         servings=servings_val, 
         ingredients=data.get('ingredients'),
         tags=data.get('tags'),  
+        is_public=data.get('is_public', True),
         user_id=session['user_id']
     )
     db.session.add(new_recipe)
@@ -202,3 +211,4 @@ def add_comment(recipe_id):
 if __name__ == '__main__':
     with app.app_context(): db.create_all()
     app.run(debug=True, port=5000)
+

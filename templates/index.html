@@ -22,6 +22,9 @@
     		<option value="nut-free">Nut-Free</option>
 	</select>
         <button id="btn-create-recipe">Create Recipe</button>
+        <label>
+        <input type="checkbox" id="new-is-public" checked> Make Public</input>
+        </label>
     </div>
     <hr>
     <div id="recipe-grid"></div>
@@ -56,7 +59,8 @@
             const nameEl = document.getElementById('new-recipe-name');
             const servingEl = document.getElementById('new-serving-size');
             const ingredientsEl = document.getElementById('new-ingredients');
-	    const tagsEl = document.getElementById('new-tags');
+	        const tagsEl = document.getElementById('new-tags');
+	        const isPublicEl = document.getElementById('new-is-public');
 
             if (!nameEl.value.trim()) return alert('Name required');
             if (parseInt(servingEl.value) < 1) return alert('Servings must be 1 or more');
