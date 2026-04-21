@@ -129,20 +129,41 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/search')
+@app.route('/search')
 def search():
     query = request.args.get('q', '').strip()
     results_data = []
+    
     if query:
-        results = Recipe.query.filter(
+        # We use outerjoin so recipes show up even if they have 0 ingredients
+        results = Recipe.query.outerjoin(Ingredient).filter(
             (Recipe.name.contains(query)) |
-            (Recipe.ingredients.contains(query))|
+            (Ingredient.name.contains(query)) |
             (Recipe.tags.contains(query))
-        ).all()
-        for r in results:
-            match_context = f"Has ingredient: {query}" if r.ingredients and query.lower() in r.ingredients.lower() else None
-            results_data.append({'recipe': r, 'context': match_context})
-    return render_template('search_results.html', results=results_data, query=query)
+        ).distinct().all()
 
+        for r in results:
+            # Logic to explain WHY the recipe matched
+            # We check if the query is in the recipe name, tags, or any ingredient name
+            is_in_name = query.lower() in r.name.lower()
+            is_in_tags = r.tags and query.lower() in r.tags.lower()
+            
+            # Check if any linked ingredient object contains the query
+            matched_ingredient = next((ing.name for ing in r.ingredients if query.lower() in ing.name.lower()), None)
+            
+            if matched_ingredient:
+                match_context = f"Has ingredient: {matched_ingredient}"
+            elif is_in_tags:
+                match_context = f"Matched tag: {query}"
+            else:
+                match_context = None # It matched the title
+            
+            results_data.append({
+                'recipe': r, 
+                'context': match_context
+            })
+            
+    return render_template('search_results.html', results=results_data, query=query)
 #API Routes
 
 @app.route('/api/recipes', methods=['GET'])
