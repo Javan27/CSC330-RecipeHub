@@ -161,15 +161,22 @@ def search():
 def get_recipes():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    all_recipes = Recipe.query.all()
+    
+    #BUG FIX: Filter by the logged-in user so you only see YOUR recipes
+    #This keeps the Profile Dashboard private
+    my_recipes = Recipe.query.filter_by(user_id=session['user_id']).all()
+    
     output = []
-    for r in all_recipes:
+    for r in my_recipes:
         ratings = Rating.query.filter_by(recipe_id=r.id).all()
         avg_val = round(sum([rt.stars for rt in ratings]) / len(ratings), 1) if ratings else "Not yet rated"
         output.append({
-            'id': r.id, 'name': r.name, 'servings': r.servings,
-            'tags': r.tags, 'creator': r.owner.username,
-             'avg_rating': avg_val
+            'id': r.id, 
+            'name': r.name, 
+            'servings': r.servings,
+            'tags': r.tags, 
+            'creator': r.owner.username,
+            'avg_rating': avg_val
         })
     return jsonify(output)
 
