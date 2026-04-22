@@ -128,40 +128,31 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-@app.route('/search')
+
 @app.route('/search')
 def search():
     query = request.args.get('q', '').strip()
     results_data = []
     
     if query:
-        # We use outerjoin so recipes show up even if they have 0 ingredients
+        #Privacy Logic: Join with Recipe to check is_public OR ownership
         results = Recipe.query.outerjoin(Ingredient).filter(
-            (Recipe.name.contains(query)) |
-            (Ingredient.name.contains(query)) |
-            (Recipe.tags.contains(query))
+            ((Recipe.name.contains(query)) |
+             (Ingredient.name.contains(query)) |
+             (Recipe.tags.contains(query))) &
+            ((Recipe.is_public == True) | (Recipe.user_id == session.get('user_id')))
         ).distinct().all()
 
         for r in results:
-            # Logic to explain WHY the recipe matched
-            # We check if the query is in the recipe name, tags, or any ingredient name
-            is_in_name = query.lower() in r.name.lower()
-            is_in_tags = r.tags and query.lower() in r.tags.lower()
-            
-            # Check if any linked ingredient object contains the query
             matched_ingredient = next((ing.name for ing in r.ingredients if query.lower() in ing.name.lower()), None)
-            
             if matched_ingredient:
                 match_context = f"Has ingredient: {matched_ingredient}"
-            elif is_in_tags:
+            elif r.tags and query.lower() in r.tags.lower():
                 match_context = f"Matched tag: {query}"
             else:
-                match_context = None # It matched the title
+                match_context = None 
             
-            results_data.append({
-                'recipe': r, 
-                'context': match_context
-            })
+            results_data.append({'recipe': r, 'context': match_context})
             
     return render_template('search_results.html', results=results_data, query=query)
 #API Routes
@@ -185,16 +176,25 @@ def get_recipes():
 
 @app.route('/api/recipes', methods=['POST'])
 def create_recipe():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     data = request.json
+
+    #BUG FIX: Name Validation
+    if not data.get('name') or not data['name'].strip():
+        return jsonify({'error': 'Recipe name cannot be blank'}), 400
+
+    #BUG FIX: Servings Defaulting Logic
+    try:
+        servings = int(data.get('servings', 1))
+        if servings < 1: servings = 1
+    except:
+        servings = 1
 
     new_recipe = Recipe(
         name=data['name'],
-        servings=data['servings'],
+        servings=servings,
         instructions=data.get('instructions', ''), 
-        tags=data['tags'],
+        tags=data.get('tags', ''),
         is_public=data.get('is_public', True),
         user_id=session['user_id']
     )
@@ -203,16 +203,18 @@ def create_recipe():
     db.session.flush() 
 
     for ing_data in data.get('ingredients', []):
+        #We also validate ingredient names here
+        if not ing_data.get('name'): continue
         new_ingredient = Ingredient(
-            quantity=ing_data['quantity'],
-            unit=ing_data['unit'],
+            quantity=ing_data.get('quantity', '1'),
+            unit=ing_data.get('unit', ''),
             name=ing_data['name'],
             recipe_id=new_recipe.id  
         )
         db.session.add(new_ingredient)
 
     db.session.commit()
-    return jsonify({'message': 'Recipe created successfully!', 'id': new_recipe.id}), 201
+    return jsonify({'message': 'Success', 'id': new_recipe.id}), 201
 
 @app.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
 def delete_recipe(recipe_id):
