@@ -3,38 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <title>Recipe Dashboard</title>
-    <style>.recipe-card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }</style>
+    <style>
+        .recipe-card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .ingredient-row { margin-bottom: 5px; display: flex; gap: 5px; }
+        .ing-qty { width: 50px; }
+        .ing-unit { width: 100px; }
+        #new-instructions { width: 100%; height: 80px; margin-top: 10px; }
+    </style>
 </head>
 <body>
     <h1>Recipe Dashboard</h1>
-    <p>Logged in as: <span id="current-user"></span> | <a href="/logout">Logout</a> | <a href="/search">Search Recipes| <a href="{{ url_for('index') }}">Profile Dashboard</a>| <a href="/feed">Global Feed</a></p>
+    <p>Logged in as: <span id="current-user"></span> | 
+        <a href="/logout">Logout</a> | 
+        <a href="/search">Search Recipes</a> | 
+        <a href="/">Profile Dashboard</a> | 
+        <a href="/feed">Global Feed</a>
+    </p>
     <hr>
     <div>
         <h3>Create New Recipe</h3>
-        <input type="text" id="new-recipe-name" placeholder="Recipe Name">
+        <input type="text" id="new-recipe-name" placeholder="Recipe Name (Required)">
         <input type="number" id="new-serving-size" placeholder="Servings" min="1" value="1">
-        	<div id="ingredient-container">
-    	<div class="ingredient-row">
-        	<input type="text" class="ing-qty" placeholder="Qty">
-        	<input type="text" class="ing-unit" placeholder="Unit">
-        	<input type="text" class="ing-name" placeholder="Ingredient Name">
-    	</div>
-	</div>
-	<button type="button" id="add-ingredient-btn">+ Add Ingredient</button>
+        
+        <div id="ingredient-container" style="margin-top: 10px;">
+            <p><strong>Ingredients:</strong></p>
+            <div class="ingredient-row">
+                <input type="text" class="ing-qty" placeholder="Qty">
+                <select class="ing-unit">
+                    <option value="">Unit</option>
+                    <option value="tsp">Teaspoon</option>
+                    <option value="tbsp">Tablespoon</option>
+                    <option value="cup">Cup</option>
+                    <option value="g">Grams</option>
+                    <option value="oz">Ounces</option>
+                    <option value="ml">Milliliters</option>
+                    <option value="lb">Pounds</option>
+                    <option value="pinch">Pinch</option>
+                    <option value="piece">Piece</option>
+                </select>
+                <input type="text" class="ing-name" placeholder="Ingredient Name">
+            </div>
+        </div>
+        <button type="button" id="add-ingredient-btn">+ Add Ingredient</button>
 
-	<br>
-	<textarea id="new-instructions" placeholder="Instructions"></textarea>
-	<select id="new-tags">
-    		<option value="">No Tag</option>
-    		<option value="keto">Keto</option>
-    		<option value="sugar-free">Sugar-Free</option>
-    		<option value="protein">Protein</option>
-    		<option value="nut-free">Nut-Free</option>
-	</select>
-        <button id="btn-create-recipe">Create Recipe</button>
-        <label>
-        <input type="checkbox" id="new-is-public" checked> Make Public</input>
-        </label>
+        <br>
+        <textarea id="new-instructions" placeholder="Enter cooking instructions here..."></textarea>
+        
+        <div style="margin-top:10px;">
+            <label>Category Tag:</label>
+            <select id="new-tags">
+                <option value="">No Tag</option>
+                <option value="keto">Keto</option>
+                <option value="sugar-free">Sugar-Free</option>
+                <option value="protein">Protein</option>
+                <option value="nut-free">Nut-Free</option>
+                <option value="vegan">Vegan</option>
+            </select>
+
+            <label style="margin-left: 20px;">
+                <input type="checkbox" id="new-is-public" checked> Make Public
+            </label>
+        </div>
+
+        <button id="btn-create-recipe" style="margin-top:15px; padding: 10px;">Create Recipe</button>
     </div>
     <hr>
     <div id="recipe-grid"></div>
@@ -45,70 +76,103 @@
 
         async function renderGrid() {
             const grid = document.getElementById('recipe-grid');
-            const response = await fetch('/api/recipes');
-            const recipes = await response.json();
-            grid.innerHTML = recipes.length ? '' : '<p>No recipes yet.</p>';
+            try {
+                const response = await fetch('/api/recipes');
+                const recipes = await response.json();
+                grid.innerHTML = recipes.length ? '' : '<p>No recipes yet.</p>';
 
-            recipes.forEach(recipe => {
-                const card = document.createElement('div');
-                card.className = "recipe-card";
-                const rating = recipe.avg_rating === "Not yet rated" ? "Not yet rated" : `${recipe.avg_rating} ⭐`;
-                card.innerHTML = `
-                    <h2><a href="/recipe/${recipe.id}">${recipe.name}</a></h2>
-                    <p><em>By: ${recipe.creator}</em></p>
-                    <p><strong>Rating:</strong> ${rating}</p>
-                    <p><strong>Servings:</strong> ${recipe.servings}</p>
-		    <p><strong>Tags:</strong> ${recipe.tags || 'None'}</p>
-                `;
-                grid.appendChild(card);
-            });
+                recipes.forEach(recipe => {
+                    const card = document.createElement('div');
+                    card.className = "recipe-card";
+                    const rating = recipe.avg_rating === "Not yet rated" ? "Not yet rated" : `${recipe.avg_rating} ⭐`;
+                    card.innerHTML = `
+                        <h2><a href="/recipe/${recipe.id}">${recipe.name}</a></h2>
+                        <p><em>By: ${recipe.creator}</em></p>
+                        <p><strong>Rating:</strong> ${rating}</p>
+                        <p><strong>Servings:</strong> ${recipe.servings}</p>
+                        <p><strong>Tags:</strong> ${recipe.tags || 'None'}</p>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Failed to load recipes", err);
+            }
         }
 
-        
-         document.getElementById('btn-create-recipe').addEventListener('click', async () => {
-    const nameEl = document.getElementById('new-recipe-name');
-    const servingEl = document.getElementById('new-serving-size');
-    const instructionsEl = document.getElementById('new-instructions');
-    const tagsEl = document.getElementById('new-tags');
-	const isPublicEl = document.getElementById('new-is-public');
+        document.getElementById('add-ingredient-btn').addEventListener('click', () => {
+            const container = document.getElementById('ingredient-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'ingredient-row';
+            newRow.innerHTML = `
+                <input type="text" class="ing-qty" placeholder="Qty">
+                <select class="ing-unit">
+                    <option value="">Unit</option>
+                    <option value="tsp">Teaspoon</option>
+                    <option value="tbsp">Tablespoon</option>
+                    <option value="cup">Cup</option>
+                    <option value="g">Grams</option>
+                    <option value="oz">Ounces</option>
+                    <option value="ml">Milliliters</option>
+                    <option value="lb">Pounds</option>
+                    <option value="pinch">Pinch</option>
+                    <option value="piece">Piece</option>
+                </select>
+                <input type="text" class="ing-name" placeholder="Ingredient Name">
+            `;
+            container.appendChild(newRow);
+        });
 
-    // Collect the multiple rows
-    const rows = document.querySelectorAll('.ingredient-row');
-    const ingredients = Array.from(rows).map(row => ({
-        quantity: row.querySelector('.ing-qty').value,
-        unit: row.querySelector('.ing-unit').value,
-        name: row.querySelector('.ing-name').value
-    })).filter(ing => ing.name.trim() !== ""); 
+        document.getElementById('btn-create-recipe').addEventListener('click', async () => {
+            const nameEl = document.getElementById('new-recipe-name');
+            const servingEl = document.getElementById('new-serving-size');
+            const instructionsEl = document.getElementById('new-instructions');
+            const tagsEl = document.getElementById('new-tags');
+            const isPublicEl = document.getElementById('new-is-public');
 
-    const response = await fetch('/api/recipes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            name: nameEl.value,
-            servings: servingEl.value,
-            instructions: instructionsEl.value,
-            ingredients: ingredients, // Send as a list
-            tags: tagsEl.value,
-            is_public: isPublicEl.checked
-        })
-    });
+            if (!nameEl.value.trim()) return alert('Recipe name cannot be blank!');
 
-    if (response.ok) {
+            const rows = document.querySelectorAll('.ingredient-row');
+            const ingredients = Array.from(rows).map(row => ({
+                quantity: row.querySelector('.ing-qty').value,
+                unit: row.querySelector('.ing-unit').value,
+                name: row.querySelector('.ing-name').value
+            })).filter(ing => ing.name.trim() !== ""); 
+
+            const response = await fetch('/api/recipes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: nameEl.value,
+                    servings: servingEl.value,
+                    instructions: instructionsEl.value,
+                    ingredients: ingredients,
+                    tags: tagsEl.value,
+                    is_public: isPublicEl.checked
+                })
+            });
+
+            if (response.ok) {
+                // Clear inputs
+                nameEl.value = '';
+                servingEl.value = '1';
+                instructionsEl.value = '';
+                tagsEl.value = '';
+                document.getElementById('ingredient-container').innerHTML = `
+                    <p><strong>Ingredients:</strong></p>
+                    <div class="ingredient-row">
+                        <input type="text" class="ing-qty" placeholder="Qty">
+                        <select class="ing-unit"><option value="">Unit</option><option value="tsp">tsp</option><option value="g">g</option></select>
+                        <input type="text" class="ing-name" placeholder="Ingredient Name">
+                    </div>`;
+                renderGrid();
+            } else {
+                const err = await response.json();
+                alert(err.error);
+            }
+        });
+
+        //Bug Fix: Actually call the function when page loads!
         renderGrid();
-    }
-});
-document.getElementById('add-ingredient-btn').addEventListener('click', () => {
-    const container = document.getElementById('ingredient-container');
-    const newRow = document.createElement('div');
-    newRow.className = 'ingredient-row';
-    newRow.innerHTML = `
-        <input type="text" class="ing-qty" placeholder="Qty">
-        <input type="text" class="ing-unit" placeholder="Unit">
-        <input type="text" class="ing-name" placeholder="Ingredient Name">
-    `;
-    container.appendChild(newRow);
-});
     </script>
 </body>
 </html>
- 
