@@ -188,7 +188,16 @@
         });
 
         //Bug Fix: Actually call the function when page loads!
-        renderGrid();
+       async function loadDashboard() {
+    const res = await fetch('/api/recipes');
+    if (res.ok) {
+        const data = await res.json();
+        renderGrid(data);
+    }
+}
+
+// Start the process
+loadDashboard();
     </script>
 </body>
 </html>
