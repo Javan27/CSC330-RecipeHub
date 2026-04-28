@@ -265,7 +265,7 @@ def fork_recipe(recipe_id):
         servings=original.servings,
         instructions=original.instructions,
         tags=original.tags,
-        is_public=False
+        is_public=False,
         user_id=session['user_id'],
         forked_from=original.owner.username
     )
