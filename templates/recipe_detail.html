@@ -88,6 +88,24 @@
                 if (res.ok) window.location.href = '/';
             }
         }
+			async function deleteRecipe() {
+    if (confirm('Delete?')) {
+        const res = await fetch('/api/recipes/{{ recipe.id }}', { method: 'DELETE' });
+        if (res.ok) window.location.href = '/';
+    }
+}
+			async function fork_recipe() {
+    			const res = await fetch('/api/recipes/{{ recipe.id }}/fork', {
+        			method: 'POST',
+        			headers: { 'Content-Type': 'application/json' }
+    			});
+    			if (res.ok) {
+        			alert('Recipe forked successfully!');
+        			window.location.href = '/';
+    			} else {
+        			alert('Failed to fork recipe');
+    			}
+			}
         async function submitRating() {
             const stars = document.getElementById('stars-input').value;
             await fetch('/api/recipes/{{ recipe.id }}/rate', {
