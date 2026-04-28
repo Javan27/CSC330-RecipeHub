@@ -80,47 +80,39 @@
         const currentUsername = "{{ username }}";
         document.getElementById('current-user').innerText = currentUsername;
 
-       async function renderGrid() {
-    // We target the two new IDs you added to your HTML
-    const originalGrid = document.getElementById('original-recipes-grid');
-    const forkedGrid = document.getElementById('forked-recipes-grid');
+       function renderGrid(recipes) {
+    const originalGrid = document.getElementById('original-recipes');
+    const forkedGrid = document.getElementById('forked-recipes');
     
-    try {
-        const response = await fetch('/api/recipes');
-        const recipes = await response.json();
+    // Clear them out first
+    originalGrid.innerHTML = '';
+    forkedGrid.innerHTML = '';
+
+    recipes.forEach(recipe => {
+        const card = document.createElement('div');
+        card.className = 'recipe-card';
         
-        // Clear both sections
-        originalGrid.innerHTML = '';
-        forkedGrid.innerHTML = '';
-
-        if (recipes.length === 0) {
-            originalGrid.innerHTML = '<p>No recipes yet.</p>';
-        }
-
-        recipes.forEach(recipe => {
-            const card = document.createElement('div');
-            card.className = "recipe-card";
-            const rating = recipe.avg_rating === "Not yet rated" ? "Not yet rated" : `${recipe.avg_rating} ⭐`;
-            
-            card.innerHTML = `
-                <h2><a href="/recipe/${recipe.id}">${recipe.name}</a></h2>
-                <p><em>By: ${recipe.creator}</em></p>
-                ${recipe.forked_from ? `<p style="color: gray;"><strong>Original by:</strong> ${recipe.forked_from}</p>` : ''}
-                <p><strong>Rating:</strong> ${rating}</p>
-                <p><strong>Servings:</strong> ${recipe.servings}</p>
-                <p><strong>Tags:</strong> ${recipe.tags || 'None'}</p>
-            `;
-
-            // The Logic: If forked_from has a value, put it in the Forked section
-            if (recipe.forked_from) {
-                forkedGrid.appendChild(card);
-            } else {
-                originalGrid.appendChild(card);
+        // Build the HTML for the card
+        card.innerHTML = `
+            <h3><a href="/recipe/${recipe.id}">${recipe.name}</a></h3>
+            <p><strong>Servings:</strong> ${recipe.servings}</p>
+            <p><strong>Rating:</strong> ${recipe.avg_rating}</p>
+            ${recipe.forked_from ? 
+                `<p style="color: #666; font-style: italic; font-size: 0.9em;">
+                    Forked from: ${recipe.forked_from}
+                 </p>` : 
+                `<p style="color: #666; font-size: 0.9em;">Original Recipe</p>`
             }
-        });
-    } catch (err) {
-        console.error("Failed to load recipes", err);
-    }
+        `;
+
+        // THE SORTING LOGIC
+        // If the recipe has a 'forked_from' value, it goes in the forked section
+        if (recipe.forked_from) {
+            forkedGrid.appendChild(card);
+        } else {
+            originalGrid.appendChild(card);
+        }
+    });
 }
 
         document.getElementById('add-ingredient-btn').addEventListener('click', () => {
