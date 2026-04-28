@@ -4,15 +4,34 @@
 <body>
     <h1>{{ recipe.name }}</h1>
     <p><strong>Created by:</strong> {{ recipe.owner.username }}</p>
-    <p><strong>Servings:</strong> {{ recipe.servings }}</p>
     <p><strong>Tags:</strong> {{ recipe.tags if recipe.tags else "None" }}</p>
-    <p><strong>Ingredients:</strong></p>
-    	<ul>
-    	{% for ing in recipe.ingredients %}
-        	<li>{{ ing.quantity }} {{ ing.unit }} {{ ing.name }}</li>
-    	{% endfor %}
-    	{% if not recipe.ingredients %}<li>None listed</li>{% endif %}
-	</ul>
+    <p>
+    <strong>Servings:</strong> 
+    <input type="number" id="serving-size" value="{{ recipe.servings }}" min="1" data-original-servings="{{ recipe.servings }}">
+    
+    <strong>Unit:</strong>
+    <select id="unit-toggle">
+        <option value="default">Original</option>
+        <option value="g">Grams (g)</option>
+        <option value="mg">Milligrams (mg)</option>
+        <option value="oz">Ounces (oz)</option>
+        <option value="lb">Pounds (lb)</option>
+        <option value="ml">Milliliters (ml)</option>
+        <option value="cup">Cups</option>
+    </select>
+</p>
+
+<p><strong>Ingredients:</strong></p>
+<ul>
+    {% for ing in recipe.ingredients %}
+        <li class="ingredient-row" data-base-unit="{{ ing.unit }}">
+            <span class="qty" data-original-qty="{{ ing.quantity }}">{{ ing.quantity }}</span> 
+            <span class="unit">{{ ing.unit }}</span> 
+            {{ ing.name }}
+        </li>
+    {% endfor %}
+    {% if not recipe.ingredients %}<li>None listed</li>{% endif %}
+</ul>
 
 <p><strong>Instructions:</strong></p>
 <p>{{ recipe.instructions if recipe.instructions else "No instructions provided." }}</p>
@@ -41,7 +60,20 @@
     <br><br><a href="{{ url_for('index') }}">Back to Dashboard</a>
 
     <script>
-        function toggleEdit() {
+       const UNIT_FACTORS = {
+    "g": 1,
+    "mg": 0.001,
+    "kg": 1000,
+    "oz": 28.3495,
+    "lb": 453.592,
+    
+    "ml": 1,
+    "tsp": 4.92892,
+    "tbsp": 14.7868,
+    "cup": 240,
+}
+		
+		function toggleEdit() {
             const d = document.getElementById('rating-display'), f = document.getElementById('rating-form');
             d.style.display = d.style.display === "none" ? "block" : "none";
             f.style.display = f.style.display === "none" ? "block" : "none";
@@ -71,6 +103,33 @@
             });
             location.reload();
         }
+		function updateIngredients() {
+    const servingInput = document.getElementById('serving-size');
+    const newServings = parseFloat(servingInput.value) || 1;
+    const originalServings = parseFloat(servingInput.dataset.originalServings);
+    const targetUnit = document.getElementById('unit-toggle').value;
+    const ratio = newServings / originalServings;
+
+    document.querySelectorAll('.ingredient-row').forEach(row => {
+        const qtySpan = row.querySelector('.qty');
+        const unitSpan = row.querySelector('.unit');
+        
+        let baseQty = parseFloat(qtySpan.dataset.originalQty) * ratio;
+        let originalUnit = row.dataset.baseUnit.toLowerCase();
+
+        if (targetUnit !== 'default' && UNIT_FACTORS[originalUnit] && UNIT_FACTORS[targetUnit]) {
+            let qtyInBaseValue = baseQty * UNIT_FACTORS[originalUnit];
+            baseQty = qtyInBaseValue / UNIT_FACTORS[targetUnit];
+            unitSpan.textContent = targetUnit;
+        } else {
+            unitSpan.textContent = row.dataset.baseUnit;
+        }
+        qtySpan.textContent = Number(baseQty.toFixed(2));
+    });
+}
+
+document.getElementById('serving-size').addEventListener('input', updateIngredients);
+document.getElementById('unit-toggle').addEventListener('change', updateIngredients);
     </script>
 </body>
 </html>
