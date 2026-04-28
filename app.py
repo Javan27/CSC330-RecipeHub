@@ -37,6 +37,7 @@ class Recipe(db.Model):
     tags = db.Column(db.String(200), nullable=True)
     is_public = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    forked_from = db.Column(db.String(80), nullable=True)
     ratings = db.relationship('Rating', backref='recipe', lazy=True, cascade="all, delete-orphan")
     comments = db.relationship('Comment', backref='recipe', lazy=True, cascade="all, delete-orphan")
     
@@ -252,6 +253,37 @@ def add_comment(recipe_id):
     db.session.add(Comment(text=data['text'], user_id=session['user_id'], recipe_id=recipe_id, username=session['username']))
     db.session.commit()
     return jsonify({'message': 'Commented'}), 201
+
+@app.route('/api/recipes/<int:recipe_id>/fork', methods=['POST'])
+def fork_recipe(recipe_id):
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
+    
+    original = Recipe.query.get_or_404(recipe_id)
+    
+    forked_recipe = Recipe(
+        name=original.name,
+        servings=original.servings,
+        instructions=original.instructions,
+        tags=original.tags,
+        is_public=False
+        user_id=session['user_id'],
+        forked_from=original.owner.username
+    )
+    
+    db.session.add(forked_recipe)
+    db.session.flush()
+
+    for ing in original.ingredients:
+        db.session.add(Ingredient(
+            name=ing.name,
+            quantity=ing.quantity,
+            unit=ing.unit,
+            recipe_id=forked_recipe.id
+        ))
+    
+    db.session.commit()
+    return jsonify({'message': 'Recipe forked!'}), 201
+
 
 if __name__ == '__main__':
     with app.app_context(): db.create_all()
