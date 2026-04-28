@@ -177,8 +177,8 @@ def get_recipes():
             'servings': r.servings,
             'tags': r.tags, 
             'creator': r.owner.username,
-            'avg_rating': avg_val
-            'forked_from': r.forked_from
+            'avg_rating': avg_val, 
+            'forked_from': r.forked_from, 
         })
     return jsonify(output)
 
