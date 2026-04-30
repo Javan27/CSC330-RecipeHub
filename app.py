@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 import os
 
 app = Flask(__name__)
@@ -13,10 +14,23 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        user = User.query.get(session['user_id'])
+        if not user or not user.is_admin:
+            return "Forbidden", 403
+        return f(*args, **kwargs)
+    return decorated
+
 #Database Models
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    is_admin = db.Column(db.Boolean, default = False)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     recipes = db.relationship('Recipe', backref='owner', lazy=True)
@@ -55,6 +69,30 @@ class Comment(db.Model):
     username = db.Column(db.String(80))
 
 #Page Routes
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    users = User.query.order_by(User.username).all()
+    public_recipes = Recipe.query.filter_by(is_public=True).order_by(Recipe.id.desc()).all()
+    return render_template('admin.html', users=users, recipes=public_recipes)
+
+@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@admin_required
+def admin_delete_user(user_id):
+    if user_id == session['user_id']:
+        return jsonify({'error': 'Cannot delete yourself'}), 400
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/delete_recipe/<int:recipe_id>', methods=['POST'])
+@admin_required
+def admin_delete_recipe(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
+    db.session.delete(recipe)
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/feed')
 def feed():
@@ -67,7 +105,8 @@ def feed():
 def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html', username=session.get('username'))
+    user = User.query.get(session['user_id'])
+    return render_template('index.html', username=session.get('username'), is_admin=user.is_admin)
 
 @app.route('/recipe/<int:recipe_id>')
 def recipe_detail(recipe_id):

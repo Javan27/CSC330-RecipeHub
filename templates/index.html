@@ -25,7 +25,9 @@
         <h3>Create New Recipe</h3>
         <input type="text" id="new-recipe-name" placeholder="Recipe Name (Required)">
         <input type="number" id="new-serving-size" placeholder="Servings" min="1" value="1">
-        
+        {% if is_admin %}
+|            <a href="/admin">Admin Panel</a>
+        {% endif %}
         <div id="ingredient-container" style="margin-top: 10px;">
             <p><strong>Ingredients:</strong></p>
             <div class="ingredient-row">
