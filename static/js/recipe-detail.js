@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const servingInput = document.getElementById('serving-size');
     const unitToggle = document.getElementById('unit-toggle');
 
-    // Expanded factors for more consistent conversion [Feature: Consistent Conversion]
+    // Factors for consistent conversion
     const UNIT_FACTORS = {
         "g": 1,
         "mg": 0.001,
@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
         "tsp": 4.92892,
         "tbsp": 14.7868,
         "cup": 240,
-        "piece": 1,   // Non-convertible standard
-        "pinch": 0.3  // Estimated base for math consistency
+        "piece": 1,
+        "pinch": 0.3
     };
 
     window.updateIngredients = function() {
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetUnit = unitToggle.value;
         const ratio = newServings / originalServings;
 
-        // Scale Macros [Bug Fix: Nutrition Scaling]
+        // Scale Nutrition Macros
         ['calories', 'protein', 'carbs', 'fat'].forEach(macro => {
             const el = document.getElementById(`display-${macro}`);
             if (el) {
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Scale Ingredients [Bug Fix: Unit Math Consistency]
+        // Scale and Convert Ingredients
         document.querySelectorAll('.ingredient-row').forEach(row => {
             const qtySpan = row.querySelector('.qty');
             const unitSpan = row.querySelector('.unit');
@@ -47,10 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
             let baseQty = parseFloat(qtySpan.dataset.originalQty) * ratio;
             let originalUnit = row.dataset.baseUnit.toLowerCase();
 
-            // Perform conversion if target unit is supported
+            // Unit conversion logic
             if (targetUnit !== 'default' && UNIT_FACTORS[originalUnit] && UNIT_FACTORS[targetUnit]) {
-                let qtyInGramsOrMl = baseQty * UNIT_FACTORS[originalUnit];
-                baseQty = qtyInGramsOrMl / UNIT_FACTORS[targetUnit];
+                let qtyInBaseUnit = baseQty * UNIT_FACTORS[originalUnit];
+                baseQty = qtyInBaseUnit / UNIT_FACTORS[targetUnit];
                 unitSpan.textContent = targetUnit;
             } else {
                 unitSpan.textContent = row.dataset.baseUnit;
