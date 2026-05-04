@@ -39,7 +39,7 @@ class Ingredient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.String(50), nullable=False) 
-    unit = db.Column(db.String(20), nullable=False) #Changed to nullable=False     
+    unit = db.Column(db.String(20), nullable=False)     
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
 
 class Recipe(db.Model):
@@ -72,7 +72,7 @@ class Comment(db.Model):
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
     username = db.Column(db.String(80))
 
-#Helpers
+#Helpers & Middleware
 def auth_error(message):
     return f"<h3>{message}</h3><br><button onclick='window.history.back()'>Go Back</button>"
 
@@ -83,12 +83,15 @@ def clear_stale_session():
         if not user:
             session.clear()
 
-#Routes
+#Page Routes
 @app.route('/')
 def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     user = User.query.get(session['user_id'])
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
     return render_template('index.html', username=session.get('username'), is_admin=user.is_admin)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -122,6 +125,19 @@ def create_account():
         return redirect(url_for('login'))
     return render_template('create_account.html')
 
+#Fixed 404 Route: Viewing a Recipe
+@app.route('/recipe/<int:recipe_id>')
+def recipe_detail(recipe_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    recipe = Recipe.query.get_or_404(recipe_id)
+    ratings = Rating.query.filter_by(recipe_id=recipe_id).all()
+    avg_val = round(sum([r.stars for r in ratings]) / len(ratings), 1) if ratings else "Not yet rated"
+    user_rating = Rating.query.filter_by(recipe_id=recipe_id, user_id=session['user_id']).first()
+    user_stars = user_rating.stars if user_rating else None
+    is_owner = (recipe.user_id == session['user_id'])
+    return render_template('recipe_detail.html', recipe=recipe, avg_rating=avg_val, user_stars=user_stars, is_owner=is_owner)
+
 @app.route('/edit_recipe/<int:recipe_id>', methods=['GET', 'POST'])
 def edit_recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
@@ -146,8 +162,8 @@ def edit_recipe(recipe_id):
 
         for i in range(len(names)):
             if names[i].strip():
-                if not units[i]: #Validation check for edit form
-                    return auth_error(f"Ingredient '{names[i]}' is missing a unit.")
+                if not units[i]:
+                    return auth_error(f"Ingredient '{names[i]}' requires a unit.")
                 db.session.add(Ingredient(quantity=qtys[i], unit=units[i], name=names[i].strip(), recipe_id=recipe.id))
         db.session.commit()
         return redirect(url_for('index'))
@@ -160,7 +176,6 @@ def feed():
     tag_filter = request.args.get('tag', '')
     query = Recipe.query.filter_by(is_public=True)
     if tag_filter: query = query.filter(Recipe.tags == tag_filter)
-
     if sort_by == 'highest_rated':
         query = query.outerjoin(Rating).group_by(Recipe.id).order_by(func.avg(Rating.stars).desc())
     else:
@@ -185,6 +200,33 @@ def search():
         results_data.append({'recipe': r, 'context': context})
     return render_template('search_results.html', results=results_data, q_name=q_name, q_ing=q_ing, q_tag=q_tag)
 
+#Admin Routes
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    users = User.query.order_by(User.username).all()
+    public_recipes = Recipe.query.filter_by(is_public=True).order_by(Recipe.id.desc()).all()
+    return render_template('admin.html', users=users, recipes=public_recipes)
+
+@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@admin_required
+def admin_delete_user(user_id):
+    if user_id == session['user_id']:
+        return jsonify({'error': 'Cannot delete yourself'}), 400
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/delete_recipe/<int:recipe_id>', methods=['POST'])
+@admin_required
+def admin_delete_recipe(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
+    db.session.delete(recipe)
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+#API Routes
 @app.route('/api/recipes', methods=['GET', 'POST'])
 def api_recipes():
     if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
@@ -198,10 +240,11 @@ def api_recipes():
         return jsonify(output)
     
     data = request.json
-    #Validation: Ingredients must have unit and name
-    for ing in data.get('ingredients', []):
-        if not ing.get('name') or not ing.get('unit'):
-            return jsonify({'error': 'All ingredients must have a name and a unit!'}), 400
+    ingredients = data.get('ingredients', [])
+    
+    #[BUG FIX: Strict validation for empty ingredients]
+    if not ingredients or len(ingredients) == 0:
+        return jsonify({'error': 'A recipe must contain at least one ingredient!'}), 400
 
     new_recipe = Recipe(
         name=data['name'], servings=int(data.get('servings', 1)), instructions=data.get('instructions', ''),
@@ -209,7 +252,7 @@ def api_recipes():
         calories=data.get('calories', 0), protein=data.get('protein', 0), carbs=data.get('carbs', 0), fat=data.get('fat', 0)
     )
     db.session.add(new_recipe); db.session.flush()
-    for ing in data.get('ingredients', []):
+    for ing in ingredients:
         db.session.add(Ingredient(name=ing['name'], quantity=ing['quantity'], unit=ing['unit'], recipe_id=new_recipe.id))
     db.session.commit()
     return jsonify({'message': 'Success', 'id': new_recipe.id}), 201
@@ -241,23 +284,6 @@ def fork_recipe(recipe_id):
     db.session.add(forked); db.session.flush()
     for ing in orig.ingredients: db.session.add(Ingredient(name=ing.name, quantity=ing.quantity, unit=ing.unit, recipe_id=forked.id))
     db.session.commit(); return jsonify({'message': 'Forked'}), 201
-
-@app.route('/admin')
-@admin_required
-def admin_dashboard():
-    return render_template('admin.html', users=User.query.all(), recipes=Recipe.query.filter_by(is_public=True).all())
-
-@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
-@admin_required
-def admin_delete_user(user_id):
-    if user_id != session['user_id']: user = User.query.get(user_id); db.session.delete(user); db.session.commit()
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/admin/delete_recipe/<int:recipe_id>', methods=['POST'])
-@admin_required
-def admin_delete_recipe(recipe_id):
-    recipe = Recipe.query.get(recipe_id); db.session.delete(recipe); db.session.commit()
-    return redirect(url_for('admin_dashboard'))
 
 @app.route('/logout')
 def logout(): session.clear(); return redirect(url_for('login'))
