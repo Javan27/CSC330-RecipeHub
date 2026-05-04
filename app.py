@@ -145,6 +145,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
+        #The 'if user' check here prevents the NoneType error
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
             session['username'] = user.username
