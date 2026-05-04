@@ -1,29 +1,60 @@
 <!DOCTYPE html>
 <html>
-<head><title>Search Results</title></head>
+<head>
+    <title>Search Results</title>
+</head>
 <body>
     <h1>Search</h1>
-<form action="/search" method="GET" style="display: flex; flex-direction: column; gap: 10px; max-width: 400px;">
-    <div>
-        <label>Recipe Name:</label><br>
-        <input type="text" name="q_name" placeholder="Search names..." value="{{ q_name or '' }}">
-    </div>
-    <div>
-        <label>Ingredients:</label><br>
-        <input type="text" name="q_ing" placeholder="e.g. Chicken, Tomato..." value="{{ q_ing or '' }}">
-    </div>
-    <div style="display: flex; flex-direction: column;">
-        <label style="font-weight: bold;">Dietary Tag</label>
-        <select name="q_tag">
-            <option value="">Any Tag</option>
-            <option value="Vegan" {% if q_tag == 'Vegan' %}selected{% endif %}>Vegan</option>
-            <option value="Keto" {% if q_tag == 'Keto' %}selected{% endif %}>Keto</option>
-            <option value="Gluten-Free" {% if q_tag == 'Gluten-Free' %}selected{% endif %}>Gluten-Free</option>
-            <option value="Vegetarian" {% if q_tag == 'Vegetarian' %}selected{% endif %}>Vegetarian</option>
-        </select>
-    </div>
-    <button type="submit">Search</button>
-</form>
-    <a href="{{ url_for('index') }}">Back</a>
+
+    <form action="/search" method="GET">
+        <div>
+            <label>Recipe Name:</label>
+            <input type="text" name="q_name" value="{{ q_name or '' }}">
+        </div>
+
+        <div>
+            <label>Ingredients:</label>
+            <input type="text" name="q_ing" value="{{ q_ing or '' }}">
+        </div>
+
+        <div>
+            <label>Dietary Tag:</label>
+            <select name="q_tag">
+                <option value="">Any Tag</option>
+                <option value="Vegan" {% if q_tag == 'Vegan' %}selected{% endif %}>Vegan</option>
+                <option value="Keto" {% if q_tag == 'Keto' %}selected{% endif %}>Keto</option>
+                <option value="Gluten-Free" {% if q_tag == 'Gluten-Free' %}selected{% endif %}>Gluten-Free</option>
+                <option value="Protein" {% if q_tag == 'Vegetarian' %}selected{% endif %}>Vegetarian</option>
+            </select>
+        </div>
+
+        <button type="submit">Search</button>
+    </form>
+
+    <hr>
+
+    {% if q_name or q_ing or q_tag %}
+        <h2>Results for: {{ q_name }} {{ q_ing }} {{ q_tag }}</h2>
+        {% if results %}
+            <ul>
+                {% for item in results %}
+                    <li>
+                        <a href="/recipe/{{ item.recipe.id }}">
+                            <strong>{{ item.recipe.name }}</strong>
+                        </a> 
+                        - Calories: {{ item.recipe.calories }}
+                        {% if item.context %}
+                            - ({{ item.context }})
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No recipes found.</p>
+        {% endif %}
+    {% endif %}
+
+    <br>
+    <a href="{{ url_for('index') }}">Back to Home</a>
 </body>
 </html>
