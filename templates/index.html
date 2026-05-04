@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <title>Recipe Dashboard</title>
     <style>
-        .recipe-card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .recipe-card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; background-color: #fff; }
         .ingredient-row { margin-bottom: 5px; display: flex; gap: 5px; }
         .ing-qty { width: 50px; }
         .ing-unit { width: 100px; }
         #new-instructions { width: 100%; height: 80px; margin-top: 10px; }
+        .macro-inputs input { width: 60px; margin-right: 10px; }
+        h2 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -21,9 +23,10 @@
     <a href="/logout">Logout</a>
     </p>
     <hr>
+    
     <div>
         <h3>Create New Recipe</h3>
-        <input type="text" id="new-recipe-name" placeholder="Recipe Name (Required)">
+        <input type="text" id="new-recipe-name" placeholder="Recipe Name (Required)" style="width: 300px;">
         <input type="number" id="new-serving-size" placeholder="Servings" min="1" value="1">
         
         <div id="ingredient-container" style="margin-top: 10px;">
@@ -45,11 +48,18 @@
                 <input type="text" class="ing-name" placeholder="Ingredient Name">
             </div>
         </div>
-        <button type="button" id="add-ingredient-btn">+ Add Ingredient</button>
+        <button type="button" id="add-ingredient-btn" style="margin-top:5px;">+ Add Ingredient</button>
 
         <br>
         <textarea id="new-instructions" placeholder="Enter cooking instructions here..."></textarea>
         
+        <div class="macro-inputs" style="margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
+            <label>Calories:</label> <input type="number" id="new-calories" value="0">
+            <label>Protein (g):</label> <input type="number" id="new-protein" value="0">
+            <label>Carbs (g):</label> <input type="number" id="new-carbs" value="0">
+            <label>Fat (g):</label> <input type="number" id="new-fat" value="0">
+        </div>
+
         <div style="margin-top:10px;">
             <label>Category Tag:</label>
             <select id="new-tags">
@@ -66,21 +76,9 @@
             </label>
         </div>
 
-        <button id="btn-create-recipe" style="margin-top:15px; padding: 10px;">Create Recipe</button>
+        <button id="btn-create-recipe" style="margin-top:15px; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Create Recipe</button>
     </div>
-    <div class="macro-inputs">
-    <label>Calories:</label>
-    <input type="number" id="new-calories" placeholder="0">
-    
-    <label>Protein (g):</label>
-    <input type="number" id="new-protein" placeholder="0">
-    
-    <label>Carbs (g):</label>
-    <input type="number" id="new-carbs" placeholder="0">
-    
-    <label>Fat (g):</label>
-    <input type="number" id="new-fat" placeholder="0">
-    </div>
+
     <hr>
     <h2>My Original Recipes</h2>
     <div id="original-recipes-grid"></div>
@@ -93,45 +91,52 @@
         const currentUsername = "{{ username }}";
         document.getElementById('current-user').innerText = currentUsername;
 
-       function renderGrid(recipes) {
-    const originalGrid = document.getElementById('original-recipes-grid');
-    const forkedGrid = document.getElementById('forked-recipes-grid');
-    
-    // Clear them out first
-    originalGrid.innerHTML = '';
-    forkedGrid.innerHTML = '';
-
-    recipes.forEach(recipe => {
-        const card = document.createElement('div');
-        card.className = 'recipe-card';
-        
-        // Build the HTML for the card
-        card.innerHTML = `
-            <h3><a href="/recipe/${recipe.id}">${recipe.name}</a></h3>
-            <p><strong>Servings:</strong> ${recipe.servings}</p>
-            <p><strong>Rating:</strong> ${recipe.avg_rating}</p>
-            
-            <div style="margin: 10px 0;">
-                <a href="/edit_recipe/${recipe.id}"><button type="button">Edit Recipe</button></a>
-            </div>
-            
-            ${recipe.forked_from ? 
-                `<p style="color: #666; font-style: italic; font-size: 0.9em;">
-                    Forked from: ${recipe.forked_from}
-                 </p>` : 
-                `<p style="color: #666; font-size: 0.9em;">Original Recipe</p>`
+        //[Bug Fix: Persistent Data Fetching]
+        async function loadDashboard() {
+            const res = await fetch('/api/recipes');
+            if (res.ok) {
+                const data = await res.json();
+                renderGrid(data);
             }
-        `;
-
-        // THE SORTING LOGIC
-        // If the recipe has a 'forked_from' value, it goes in the forked section
-        if (recipe.forked_from) {
-            forkedGrid.appendChild(card);
-        } else {
-            originalGrid.appendChild(card);
         }
-    });
-}
+
+        function renderGrid(recipes) {
+            const originalGrid = document.getElementById('original-recipes-grid');
+            const forkedGrid = document.getElementById('forked-recipes-grid');
+            
+            originalGrid.innerHTML = '';
+            forkedGrid.innerHTML = '';
+
+            if (recipes.length === 0) {
+                originalGrid.innerHTML = '<p>No recipes found.</p>';
+            }
+
+            recipes.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                
+                const rating = recipe.avg_rating === "Not yet rated" ? "Not yet rated" : `${recipe.avg_rating} ⭐`;
+                
+                card.innerHTML = `
+                    <h3><a href="/recipe/${recipe.id}">${recipe.name}</a></h3>
+                    <p><strong>Servings:</strong> ${recipe.servings}</p>
+                    <p><strong>Rating:</strong> ${rating}</p>
+                    <div style="margin: 10px 0;">
+                        <a href="/edit_recipe/${recipe.id}"><button type="button">Edit Recipe</button></a>
+                    </div>
+                    ${recipe.forked_from ? 
+                        `<p style="color: #666; font-style: italic; font-size: 0.85em;">Forked from: ${recipe.forked_from}</p>` : 
+                        `<p style="color: #27ae60; font-size: 0.85em; font-weight: bold;">Original Recipe</p>`
+                    }
+                `;
+
+                if (recipe.forked_from) {
+                    forkedGrid.appendChild(card);
+                } else {
+                    originalGrid.appendChild(card);
+                }
+            });
+        }
 
         document.getElementById('add-ingredient-btn').addEventListener('click', () => {
             const container = document.getElementById('ingredient-container');
@@ -141,15 +146,11 @@
                 <input type="text" class="ing-qty" placeholder="Qty">
                 <select class="ing-unit">
                     <option value="">Unit</option>
-                    <option value="tsp">Teaspoon</option>
-                    <option value="tbsp">Tablespoon</option>
-                    <option value="cup">Cup</option>
-                    <option value="g">Grams</option>
-                    <option value="oz">Ounces</option>
-                    <option value="ml">Milliliters</option>
-                    <option value="lb">Pounds</option>
-                    <option value="pinch">Pinch</option>
-                    <option value="piece">Piece</option>
+                    <option value="tsp">tsp</option><option value="tbsp">tbsp</option>
+                    <option value="cup">cup</option><option value="g">g</option>
+                    <option value="oz">oz</option><option value="ml">ml</option>
+                    <option value="lb">lb</option><option value="pinch">pinch</option>
+                    <option value="piece">piece</option>
                 </select>
                 <input type="text" class="ing-name" placeholder="Ingredient Name">
             `;
@@ -194,11 +195,12 @@
             });
 
             if (response.ok) {
-                // Clear inputs
+                //[Bug Fix: Full UI Reset]
                 nameEl.value = '';
                 servingEl.value = '1';
                 instructionsEl.value = '';
                 tagsEl.value = '';
+                calEl.value = '0'; protEl.value = '0'; carbEl.value = '0'; fatEl.value = '0';
                 document.getElementById('ingredient-container').innerHTML = `
                     <p><strong>Ingredients:</strong></p>
                     <div class="ingredient-row">
@@ -206,24 +208,14 @@
                         <select class="ing-unit"><option value="">Unit</option><option value="tsp">tsp</option><option value="g">g</option></select>
                         <input type="text" class="ing-name" placeholder="Ingredient Name">
                     </div>`;
-                renderGrid();
+                loadDashboard(); 
             } else {
                 const err = await response.json();
                 alert(err.error);
             }
         });
 
-        //Bug Fix: Actually call the function when page loads!
-       async function loadDashboard() {
-    const res = await fetch('/api/recipes');
-    if (res.ok) {
-        const data = await res.json();
-        renderGrid(data);
-    }
-}
-
-// Start the process
-loadDashboard();
+        loadDashboard();
     </script>
 </body>
 </html>
