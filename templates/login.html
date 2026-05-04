@@ -2,36 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>Login Page</title>
-    <style>
-        .auth-container { max-width: 300px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
-        .form-group { margin-bottom: 15px; }
-        .btn { padding: 8px 15px; cursor: pointer; }
-    </style>
 </head>
-<body>
-    <div class="auth-container">
-        <h2>Login</h2>
-        <form action="/login" method="POST">
-            <div class="form-group">
-                <label>Username</label><br>
-                <input type="text" name="username" style="width: 100%;" required>
-            </div>
+
+<body class="page-body">
+
+    <div class="container form-container">
+
+        <div class="card form-card">
+            <h2 class="form-title">Login</h2>
+
+            <form class="form" action="/login" method="POST">
+
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input class="form-input" type="text" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input class="form-input" type="password" name="password" required>
+                </div>
+
+                <div class="form-row">
+                    <button class="btn btn-primary" type="submit">
+                        Submit
+                    </button>
+                    <button class="btn btn-secondary" type="button" onclick="window.history.back()">
+                        Go Back
+                    </button>
+                </div>
+
+            </form>
+
+            <hr class="divider">
             
-            <div class="form-group">
-                <label>Password</label><br>
-                <input type="password" name="password" style="width: 100%;" required>
+            <div class="form-footer">
+                <p class="text-muted">Don't have an account?</p>
+
+                <a href="/create_account">
+                    <button class="btn btn-secondary" type="button" style="width: 100%;">
+                        Create an Account
+                    </button>
+                </a>
             </div>
+        </div>
 
-            <button type="submit" class="btn" style="background-color: #4CAF50; color: white; border: none;">Submit</button>
-            <button type="button" class="btn" onclick="window.history.back()">Go Back</button>
-        </form>
-
-        <hr>
-        <p>Don't have an account?</p>
-        <a href="/create_account">
-            <button type="button" class="btn">Create an Account</button>
-        </a>
     </div>
+
 </body>
 </html>
