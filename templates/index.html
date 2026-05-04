@@ -68,6 +68,19 @@
 
         <button id="btn-create-recipe" style="margin-top:15px; padding: 10px;">Create Recipe</button>
     </div>
+    <div class="macro-inputs">
+    <label>Calories:</label>
+    <input type="number" id="new-calories" placeholder="0">
+    
+    <label>Protein (g):</label>
+    <input type="number" id="new-protein" placeholder="0">
+    
+    <label>Carbs (g):</label>
+    <input type="number" id="new-carbs" placeholder="0">
+    
+    <label>Fat (g):</label>
+    <input type="number" id="new-fat" placeholder="0">
+    </div>
     <hr>
     <h2>My Original Recipes</h2>
     <div id="original-recipes-grid"></div>
@@ -144,6 +157,10 @@
             const instructionsEl = document.getElementById('new-instructions');
             const tagsEl = document.getElementById('new-tags');
             const isPublicEl = document.getElementById('new-is-public');
+            const calEl = document.getElementById('new-calories');
+            const protEl = document.getElementById('new-protein');
+            const carbEl = document.getElementById('new-carbs');
+            const fatEl = document.getElementById('new-fat');
 
             if (!nameEl.value.trim()) return alert('Recipe name cannot be blank!');
 
@@ -163,7 +180,11 @@
                     instructions: instructionsEl.value,
                     ingredients: ingredients,
                     tags: tagsEl.value,
-                    is_public: isPublicEl.checked
+                    is_public: isPublicEl.checked,
+                    calories: parseInt(calEl.value) || 0,
+                    protein: parseInt(protEl.value) || 0,
+                    carbs: parseInt(carbEl.value) || 0,
+                    fat: parseInt(fatEl.value) || 0
                 })
             });
 
