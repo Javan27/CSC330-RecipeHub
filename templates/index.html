@@ -5,195 +5,109 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>Recipe Dashboard</title>
 </head>
-<body>
-    <h1>Recipe Dashboard</h1>
-    <p>
-    Logged in as: <strong><span id="current-user"></span></strong> | 
-    <a href="/">My Dashboard</a> | 
-    <a href="/feed">Global Feed</a> | 
-    <a href="/search">Search</a> | 
-    <a href="/logout">Logout</a>
-    </p>
-    <hr>
-    <div>
-        <h3>Create New Recipe</h3>
-        <input type="text" id="new-recipe-name" placeholder="Recipe Name (Required)">
-        <input type="number" id="new-serving-size" placeholder="Servings" min="1" value="1">
-        {% if is_admin %}
-|            <a href="/admin">Admin Panel</a>
-        {% endif %}
-        <div id="ingredient-container" style="margin-top: 10px;">
-            <p><strong>Ingredients:</strong></p>
-            <div class="ingredient-row">
-                <input type="text" class="ing-qty" placeholder="Qty">
-                <select class="ing-unit">
-                    <option value="">Unit</option>
-                    <option value="tsp">Teaspoon</option>
-                    <option value="tbsp">Tablespoon</option>
-                    <option value="cup">Cup</option>
-                    <option value="g">Grams</option>
-                    <option value="oz">Ounces</option>
-                    <option value="ml">Milliliters</option>
-                    <option value="lb">Pounds</option>
-                    <option value="pinch">Pinch</option>
-                    <option value="piece">Piece</option>
-                </select>
-                <input type="text" class="ing-name" placeholder="Ingredient Name">
+
+<body class="page-body">
+
+    <div class="container dashboard-container">
+
+        <h1 class="page-title">Recipe Dashboard</h1>
+
+        <p class="nav-bar">
+            Logged in as: 
+            <strong class="username">
+                <span id="current-user"></span>
+            </strong> | 
+            <a class="nav-link" href="/">My Dashboard</a> | 
+            <a class="nav-link" href="/feed">Global Feed</a> | 
+            <a class="nav-link" href="/search">Search</a> | 
+            <a class="nav-link" href="/logout">Logout</a>
+        </p>
+
+        <hr class="divider">
+
+        <!-- CREATE RECIPE SECTION -->
+        <div class="card form-card">
+
+            <h3 class="section-title">Create New Recipe</h3>
+
+            <input class="form-input" type="text" id="new-recipe-name" placeholder="Recipe Name (Required)">
+
+            <input class="form-input" type="number" id="new-serving-size" placeholder="Servings" min="1" value="1">
+
+            {% if is_admin %}
+                <a class="admin-link" href="/admin">Admin Panel</a>
+            {% endif %}
+
+            <div id="ingredient-container" class="ingredient-container">
+                <p class="section-label"><strong>Ingredients:</strong></p>
+
+                <div class="ingredient-row form-row">
+                    <input class="form-input ing-qty" type="text" placeholder="Qty">
+
+                    <select class="form-select ing-unit">
+                        <option value="">Unit</option>
+                        <option value="tsp">Teaspoon</option>
+                        <option value="tbsp">Tablespoon</option>
+                        <option value="cup">Cup</option>
+                        <option value="g">Grams</option>
+                        <option value="oz">Ounces</option>
+                        <option value="ml">Milliliters</option>
+                        <option value="lb">Pounds</option>
+                        <option value="pinch">Pinch</option>
+                        <option value="piece">Piece</option>
+                    </select>
+
+                    <input class="form-input ing-name" type="text" placeholder="Ingredient Name">
+                </div>
             </div>
-        </div>
-        <button type="button" id="add-ingredient-btn">+ Add Ingredient</button>
 
-        <br>
-        <textarea id="new-instructions" placeholder="Enter cooking instructions here..."></textarea>
+            <button class="btn btn-secondary" type="button" id="add-ingredient-btn">
+                + Add Ingredient
+            </button>
+
+            <br>
+
+            <textarea class="form-textarea" id="new-instructions" placeholder="Enter cooking instructions here..."></textarea>
+            
+            <div class="form-row spaced-row">
+
+                <div class="form-group">
+                    <label class="form-label">Category Tag:</label>
+
+                    <select class="form-select" id="new-tags">
+                        <option value="">No Tag</option>
+                        <option value="keto">Keto</option>
+                        <option value="sugar-free">Sugar-Free</option>
+                        <option value="protein">Protein</option>
+                        <option value="nut-free">Nut-Free</option>
+                        <option value="vegan">Vegan</option>
+                    </select>
+                </div>
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="new-is-public" checked> 
+                    Make Public
+                </label>
+            </div>
+
+            <button class="btn btn-primary" id="btn-create-recipe">
+                Create Recipe
+            </button>
+
+        </div>
+
+        <hr class="divider">
+
         
-        <div style="margin-top:10px;">
-            <label>Category Tag:</label>
-            <select id="new-tags">
-                <option value="">No Tag</option>
-                <option value="keto">Keto</option>
-                <option value="sugar-free">Sugar-Free</option>
-                <option value="protein">Protein</option>
-                <option value="nut-free">Nut-Free</option>
-                <option value="vegan">Vegan</option>
-            </select>
+        <h2 class="section-title">My Original Recipes</h2>
+        <div id="original-recipes-grid" class="grid"></div>
 
-            <label style="margin-left: 20px;">
-                <input type="checkbox" id="new-is-public" checked> Make Public
-            </label>
-        </div>
+        <hr class="divider">
 
-        <button id="btn-create-recipe" style="margin-top:15px; padding: 10px;">Create Recipe</button>
+      
+        <h2 class="section-title">Forked Recipes</h2>
+        <div id="forked-recipes-grid" class="grid"></div>
+
     </div>
-    <hr>
-    <h2>My Original Recipes</h2>
-    <div id="original-recipes-grid"></div>
 
-    <hr>
-    <h2>Forked Recipes</h2>
-    <div id="forked-recipes-grid"></div>
-
-    <script>
-        const currentUsername = "{{ username }}";
-        document.getElementById('current-user').innerText = currentUsername;
-
-       function renderGrid(recipes) {
-    const originalGrid = document.getElementById('original-recipes-grid');
-    const forkedGrid = document.getElementById('forked-recipes-grid');
-    
-    // Clear them out first
-    originalGrid.innerHTML = '';
-    forkedGrid.innerHTML = '';
-
-    recipes.forEach(recipe => {
-        const card = document.createElement('div');
-        card.className = 'recipe-card';
-        
-        // Build the HTML for the card
-        card.innerHTML = `
-            <h3><a href="/recipe/${recipe.id}">${recipe.name}</a></h3>
-            <p><strong>Servings:</strong> ${recipe.servings}</p>
-            <p><strong>Rating:</strong> ${recipe.avg_rating}</p>
-            ${recipe.forked_from ? 
-                `<p style="color: #666; font-style: italic; font-size: 0.9em;">
-                    Forked from: ${recipe.forked_from}
-                 </p>` : 
-                `<p style="color: #666; font-size: 0.9em;">Original Recipe</p>`
-            }
-        `;
-
-        // THE SORTING LOGIC
-        // If the recipe has a 'forked_from' value, it goes in the forked section
-        if (recipe.forked_from) {
-            forkedGrid.appendChild(card);
-        } else {
-            originalGrid.appendChild(card);
-        }
-    });
-}
-
-        document.getElementById('add-ingredient-btn').addEventListener('click', () => {
-            const container = document.getElementById('ingredient-container');
-            const newRow = document.createElement('div');
-            newRow.className = 'ingredient-row';
-            newRow.innerHTML = `
-                <input type="text" class="ing-qty" placeholder="Qty">
-                <select class="ing-unit">
-                    <option value="">Unit</option>
-                    <option value="tsp">Teaspoon</option>
-                    <option value="tbsp">Tablespoon</option>
-                    <option value="cup">Cup</option>
-                    <option value="g">Grams</option>
-                    <option value="oz">Ounces</option>
-                    <option value="ml">Milliliters</option>
-                    <option value="lb">Pounds</option>
-                    <option value="pinch">Pinch</option>
-                    <option value="piece">Piece</option>
-                </select>
-                <input type="text" class="ing-name" placeholder="Ingredient Name">
-            `;
-            container.appendChild(newRow);
-        });
-
-        document.getElementById('btn-create-recipe').addEventListener('click', async () => {
-            const nameEl = document.getElementById('new-recipe-name');
-            const servingEl = document.getElementById('new-serving-size');
-            const instructionsEl = document.getElementById('new-instructions');
-            const tagsEl = document.getElementById('new-tags');
-            const isPublicEl = document.getElementById('new-is-public');
-
-            if (!nameEl.value.trim()) return alert('Recipe name cannot be blank!');
-
-            const rows = document.querySelectorAll('.ingredient-row');
-            const ingredients = Array.from(rows).map(row => ({
-                quantity: row.querySelector('.ing-qty').value,
-                unit: row.querySelector('.ing-unit').value,
-                name: row.querySelector('.ing-name').value
-            })).filter(ing => ing.name.trim() !== ""); 
-
-            const response = await fetch('/api/recipes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: nameEl.value,
-                    servings: servingEl.value,
-                    instructions: instructionsEl.value,
-                    ingredients: ingredients,
-                    tags: tagsEl.value,
-                    is_public: isPublicEl.checked
-                })
-            });
-
-            if (response.ok) {
-                // Clear inputs
-                nameEl.value = '';
-                servingEl.value = '1';
-                instructionsEl.value = '';
-                tagsEl.value = '';
-                document.getElementById('ingredient-container').innerHTML = `
-                    <p><strong>Ingredients:</strong></p>
-                    <div class="ingredient-row">
-                        <input type="text" class="ing-qty" placeholder="Qty">
-                        <select class="ing-unit"><option value="">Unit</option><option value="tsp">tsp</option><option value="g">g</option></select>
-                        <input type="text" class="ing-name" placeholder="Ingredient Name">
-                    </div>`;
-                renderGrid();
-            } else {
-                const err = await response.json();
-                alert(err.error);
-            }
-        });
-
-        //Bug Fix: Actually call the function when page loads!
-       async function loadDashboard() {
-    const res = await fetch('/api/recipes');
-    if (res.ok) {
-        const data = await res.json();
-        renderGrid(data);
-    }
-}
-
-// Start the process
-loadDashboard();
-    </script>
-</body>
-</html>
+<script>

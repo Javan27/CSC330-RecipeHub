@@ -6,44 +6,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Public Recipe Feed</title>
 </head>
-<body>
-    <div class="feed-container">
-        <p>Logged in as: <strong>{{ username }}</strong> | 
-            <a href="/logout">Logout</a> | 
-            <a href="/search">Search Recipes</a> | 
-            <a href="/">Profile Dashboard</a> | 
-            <a href="/feed">Global Feed</a>
+<body class="page-body">
+
+    <div class="feed-container container">
+
+        <p class="nav-bar text-sm">
+            Logged in as: <strong class="username">{{ username }}</strong> | 
+            <a class="nav-link" href="/logout">Logout</a> | 
+            <a class="nav-link" href="/search">Search Recipes</a> | 
+            <a class="nav-link" href="/">Profile Dashboard</a> | 
+            <a class="nav-link" href="/feed">Global Feed</a>
         </p>
 
-        <h1>Public Recipe Feed</h1>
-        <hr>
+        <h1 class="page-title">Public Recipe Feed</h1>
+        <hr class="divider">
 
         {% if recipes %}
-            <div id="recipe-grid">
+            <div id="recipe-grid" class="grid">
+
                 {% for recipe in recipes %}
-                    <div class="recipe-card">
-                        <h2><a href="/recipe/{{ recipe.id }}">{{ recipe.name }}</a></h2>
-                        <p><em>By: {{ recipe.owner.username }}</em></p>
-                        <p><strong>Servings:</strong> {{ recipe.servings }}</p>
-                        <p><strong>Tags:</strong> {{ recipe.tags or 'None' }}</p>
+                    <div class="recipe-card card">
+
+                        <h2 class="recipe-title">
+                            <a class="recipe-link" href="/recipe/{{ recipe.id }}">
+                                {{ recipe.name }}
+                            </a>
+                        </h2>
+
+                        <p class="recipe-author">
+                            <em>By: <span class="author-name">{{ recipe.owner.username }}</span></em>
+                        </p>
+
+                        <p class="recipe-meta">
+                            <strong>Servings:</strong> 
+                            <span class="servings">{{ recipe.servings }}</span>
+                        </p>
+
+                        <p class="recipe-meta">
+                            <strong>Tags:</strong> 
+                            <span class="tags">{{ recipe.tags or 'None' }}</span>
+                        </p>
                         
-                        <p><strong>Top Ingredients:</strong></p>
-                        <ul>
+                        <p class="section-label"><strong>Top Ingredients:</strong></p>
+
+                        <ul class="ingredient-list">
                             {% for ingredient in recipe.ingredients[:3] %}
-                                <li>{{ ingredient.name }}</li>
+                                <li class="ingredient-item">{{ ingredient.name }}</li>
                             {% endfor %}
+
                             {% if recipe.ingredients|length > 3 %}
-                                <li>...and {{ recipe.ingredients|length - 3 }} more</li>
+                                <li class="ingredient-more">
+                                    ...and {{ recipe.ingredients|length - 3 }} more
+                                </li>
                             {% endif %}
                         </ul>
                         
-                        <a href="/recipe/{{ recipe.id }}"><button>View Full Recipe & Comments</button></a>
+                        <a href="/recipe/{{ recipe.id }}">
+                            <button class="btn btn-primary">
+                                View Full Recipe & Comments
+                            </button>
+                        </a>
+
                     </div>
                 {% endfor %}
+
             </div>
         {% else %}
-            <p>No public recipes available. Be the first to post one!</p>
+            <p class="empty-state">
+                No public recipes available. Be the first to post one!
+            </p>
         {% endif %}
+
     </div>
 </body>
 </html>

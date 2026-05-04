@@ -4,157 +4,131 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>{{ recipe.name }} Details</title>
 </head>
-<body>
-    <h1>{{ recipe.name }}</h1>
-    <p><strong>Created by:</strong> {{ recipe.owner.username }}</p>
-    <p><strong>Tags:</strong> {{ recipe.tags if recipe.tags else "None" }}</p>
-    <p>
-    <strong>Servings:</strong> 
-    <input type="number" id="serving-size" value="{{ recipe.servings }}" min="1" data-original-servings="{{ recipe.servings }}">
-    
-    <strong>Unit:</strong>
-    <select id="unit-toggle">
-        <option value="default">Original</option>
-        <option value="g">Grams (g)</option>
-        <option value="mg">Milligrams (mg)</option>
-        <option value="oz">Ounces (oz)</option>
-        <option value="lb">Pounds (lb)</option>
-        <option value="ml">Milliliters (ml)</option>
-        <option value="cup">Cups</option>
-    </select>
-</p>
 
-<p><strong>Ingredients:</strong></p>
-<ul>
-    {% for ing in recipe.ingredients %}
-        <li class="ingredient-row" data-base-unit="{{ ing.unit }}">
-            <span class="qty" data-original-qty="{{ ing.quantity }}">{{ ing.quantity }}</span> 
-            <span class="unit">{{ ing.unit }}</span> 
-            {{ ing.name }}
-        </li>
-    {% endfor %}
-    {% if not recipe.ingredients %}<li>None listed</li>{% endif %}
-</ul>
+<body class="page-body">
 
-<p><strong>Instructions:</strong></p>
-<p>{{ recipe.instructions if recipe.instructions else "No instructions provided." }}</p>
-    <p><strong>Avg Rating:</strong> {% if avg_rating == "Not yet rated" %}{{ avg_rating }}{% else %}{{ avg_rating }} ⭐{% endif %}</p>
+    <div class="container recipe-container">
 
-    {% if is_owner %}
-        <button onclick="deleteRecipe()" style="color: red;">Delete Recipe</button>
-    {% else %}
-        <button onclick="fork_recipe()" style="background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 10px;">
-            Fork Recipe
-        </button>
-        
-        <hr>
-        <div id="rating-display" {% if not user_stars %}style="display:none;"{% endif %}>
-            <p>Your rating: <strong>{{ user_stars }} Stars</strong></p>
-            <button onclick="toggleEdit()">Change Rating</button>
+        <h1 class="page-title recipe-title">{{ recipe.name }}</h1>
+
+        <p class="recipe-meta">
+            <strong>Created by:</strong> 
+            <span class="author-name">{{ recipe.owner.username }}</span>
+        </p>
+
+        <p class="recipe-meta">
+            <strong>Tags:</strong> 
+            <span class="tags">{{ recipe.tags if recipe.tags else "None" }}</span>
+        </p>
+
+        <div class="recipe-controls form-row">
+            <div class="form-group">
+                <label class="form-label"><strong>Servings:</strong></label>
+                <input class="form-input" type="number" id="serving-size" value="{{ recipe.servings }}" min="1" data-original-servings="{{ recipe.servings }}">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label"><strong>Unit:</strong></label>
+                <select class="form-select" id="unit-toggle">
+                    <option value="default">Original</option>
+                    <option value="g">Grams (g)</option>
+                    <option value="mg">Milligrams (mg)</option>
+                    <option value="oz">Ounces (oz)</option>
+                    <option value="lb">Pounds (lb)</option>
+                    <option value="ml">Milliliters (ml)</option>
+                    <option value="cup">Cups</option>
+                </select>
+            </div>
         </div>
-        <div id="rating-form" {% if user_stars %}style="display:none;"{% endif %}>
-            <h3>Rate this Recipe</h3>
-            <select id="stars-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select>
-            <button onclick="submitRating()">Submit</button>
-            {% if user_stars %}<button onclick="toggleEdit()">Cancel</button>{% endif %}
+
+        <p class="section-label"><strong>Ingredients:</strong></p>
+
+        <ul class="ingredient-list">
+            {% for ing in recipe.ingredients %}
+                <li class="ingredient-row" data-base-unit="{{ ing.unit }}">
+                    <span class="qty" data-original-qty="{{ ing.quantity }}">{{ ing.quantity }}</span> 
+                    <span class="unit">{{ ing.unit }}</span> 
+                    <span class="ingredient-name">{{ ing.name }}</span>
+                </li>
+            {% endfor %}
+            {% if not recipe.ingredients %}
+                <li class="empty-state">None listed</li>
+            {% endif %}
+        </ul>
+
+        <p class="section-label"><strong>Instructions:</strong></p>
+        <p class="recipe-instructions">
+            {{ recipe.instructions if recipe.instructions else "No instructions provided." }}
+        </p>
+
+        <p class="recipe-meta">
+            <strong>Avg Rating:</strong> 
+            <span class="rating">
+                {% if avg_rating == "Not yet rated" %}
+                    {{ avg_rating }}
+                {% else %}
+                    {{ avg_rating }} ⭐
+                {% endif %}
+            </span>
+        </p>
+
+        {% if is_owner %}
+            <button class="btn btn-danger" onclick="deleteRecipe()">
+                Delete Recipe
+            </button>
+        {% else %}
+            <button class="btn btn-success" onclick="fork_recipe()">
+                Fork Recipe
+            </button>
+            
+            <hr class="divider">
+
+            <div id="rating-display" class="rating-display" {% if not user_stars %}style="display:none;"{% endif %}>
+                <p>Your rating: <strong>{{ user_stars }} Stars</strong></p>
+                <button class="btn btn-secondary" onclick="toggleEdit()">Change Rating</button>
+            </div>
+
+            <div id="rating-form" class="rating-form" {% if user_stars %}style="display:none;"{% endif %}>
+                <h3 class="section-title">Rate this Recipe</h3>
+
+                <select class="form-select" id="stars-input">
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                    <option value="2">2</option>
+                    <option value="1">1</option>
+                </select>
+
+                <button class="btn btn-primary" onclick="submitRating()">Submit</button>
+
+                {% if user_stars %}
+                    <button class="btn btn-secondary" onclick="toggleEdit()">Cancel</button>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <hr class="divider">
+
+        <h3 class="section-title">Comments</h3>
+
+        <div id="comments" class="comments-container">
+            {% for c in recipe.comments %}
+                <p class="comment">
+                    <strong class="comment-user">{{ c.username }}:</strong> 
+                    <span class="comment-text">{{ c.text }}</span>
+                </p>
+            {% endfor %}
         </div>
-    {% endif %}
 
-    <hr>
-    <h3>Comments</h3>
-    <div id="comments">{% for c in recipe.comments %}<p><strong>{{ c.username }}:</strong> {{ c.text }}</p>{% endfor %}</div>
-    <input type="text" id="new-comment" placeholder="Comment..."><button onclick="submitComment()">Post</button>
-    <br><br><a href="{{ url_for('index') }}">Back to Dashboard</a>
+        <div class="comment-input-row">
+            <input class="form-input" type="text" id="new-comment" placeholder="Comment...">
+            <button class="btn btn-primary" onclick="submitComment()">Post</button>
+        </div>
 
-    <script>
-       const UNIT_FACTORS = {
-    "g": 1,
-    "mg": 0.001,
-    "kg": 1000,
-    "oz": 28.3495,
-    "lb": 453.592,
-    
-    "ml": 1,
-    "tsp": 4.92892,
-    "tbsp": 14.7868,
-    "cup": 240,
-}
-		
-		function toggleEdit() {
-            const d = document.getElementById('rating-display'), f = document.getElementById('rating-form');
-            d.style.display = d.style.display === "none" ? "block" : "none";
-            f.style.display = f.style.display === "none" ? "block" : "none";
-        }
-        async function deleteRecipe() {
-            if (confirm('Delete?')) {
-                const res = await fetch('/api/recipes/{{ recipe.id }}', { method: 'DELETE' });
-                if (res.ok) window.location.href = '/';
-            }
-        }
-			async function deleteRecipe() {
-    if (confirm('Delete?')) {
-        const res = await fetch('/api/recipes/{{ recipe.id }}', { method: 'DELETE' });
-        if (res.ok) window.location.href = '/';
-    }
-}
-			async function fork_recipe() {
-    			const res = await fetch('/api/recipes/{{ recipe.id }}/fork', {
-        			method: 'POST',
-        			headers: { 'Content-Type': 'application/json' }
-    			});
-    			if (res.ok) {
-        			alert('Recipe forked successfully!');
-        			window.location.href = '/';
-    			} else {
-        			alert('Failed to fork recipe');
-    			}
-			}
-        async function submitRating() {
-            const stars = document.getElementById('stars-input').value;
-            await fetch('/api/recipes/{{ recipe.id }}/rate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ stars: parseInt(stars) })
-            });
-            location.reload();
-        }
-        async function submitComment() {
-            const text = document.getElementById('new-comment').value;
-            if (!text) return;
-            await fetch('/api/recipes/{{ recipe.id }}/comment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text })
-            });
-            location.reload();
-        }
-		function updateIngredients() {
-    const servingInput = document.getElementById('serving-size');
-    const newServings = parseFloat(servingInput.value) || 1;
-    const originalServings = parseFloat(servingInput.dataset.originalServings);
-    const targetUnit = document.getElementById('unit-toggle').value;
-    const ratio = newServings / originalServings;
+        <br><br>
 
-    document.querySelectorAll('.ingredient-row').forEach(row => {
-        const qtySpan = row.querySelector('.qty');
-        const unitSpan = row.querySelector('.unit');
-        
-        let baseQty = parseFloat(qtySpan.dataset.originalQty) * ratio;
-        let originalUnit = row.dataset.baseUnit.toLowerCase();
+        <a class="nav-link" href="{{ url_for('index') }}">
+            ← Back to Dashboard
+        </a>
 
-        if (targetUnit !== 'default' && UNIT_FACTORS[originalUnit] && UNIT_FACTORS[targetUnit]) {
-            let qtyInBaseValue = baseQty * UNIT_FACTORS[originalUnit];
-            baseQty = qtyInBaseValue / UNIT_FACTORS[targetUnit];
-            unitSpan.textContent = targetUnit;
-        } else {
-            unitSpan.textContent = row.dataset.baseUnit;
-        }
-        qtySpan.textContent = Number(baseQty.toFixed(2));
-    });
-}
-
-document.getElementById('serving-size').addEventListener('input', updateIngredients);
-document.getElementById('unit-toggle').addEventListener('change', updateIngredients);
-    </script>
-</body>
-</html>
+    </div>
