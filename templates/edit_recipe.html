@@ -19,43 +19,53 @@
 
         <div>
             <label>Instructions:</label><br>
-            <textarea name="instructions" rows="5">{{ recipe.instructions }}</textarea>
+            <textarea name="instructions" rows="5" style="width: 100%;">{{ recipe.instructions }}</textarea>
         </div>
 
         <h3>Ingredients</h3>
-        <div>
+        <div id="ingredient-container">
             {% for ing in recipe.ingredients %}
-                <input type="text" name="ingredients" value="{{ ing.name }}"><br>
+            <div class="ingredient-row" style="margin-bottom: 5px;">
+                <input type="text" name="ing_qty" value="{{ ing.quantity }}" placeholder="Qty" style="width: 50px;">
+                <input type="text" name="ing_unit" value="{{ ing.unit }}" placeholder="Unit" style="width: 80px;">
+                <input type="text" name="ing_name" value="{{ ing.name }}" placeholder="Ingredient Name">
+            </div>
             {% endfor %}
-            <!-- Blank inputs to allow adding more ingredients while editing -->
-            <input type="text" name="ingredients" placeholder="Add another..."><br>
-            <input type="text" name="ingredients" placeholder="Add another...">
+            
+            <hr>
+            <p><strong>Add New Ingredients:</strong></p>
+            <div class="ingredient-row">
+                <input type="text" name="ing_qty" placeholder="Qty" style="width: 50px;">
+                <input type="text" name="ing_unit" placeholder="Unit" style="width: 80px;">
+                <input type="text" name="ing_name" placeholder="New Ingredient">
+            </div>
         </div>
 
         <h3>Macros</h3>
-        <label>Calories:</label> <input type="number" name="calories" value="{{ recipe.calories }}"> <br>
-        <label>Protein (g):</label> <input type="number" name="protein" value="{{ recipe.protein }}"> <br>
-        <label>Carbs (g):</label> <input type="number" name="carbs" value="{{ recipe.carbs }}"> <br>
-        <label>Fat (g):</label> <input type="number" name="fat" value="{{ recipe.fat }}">
+        <p>
+            <label>Calories:</label> <input type="number" name="calories" value="{{ recipe.calories }}"> <br>
+            <label>Protein (g):</label> <input type="number" name="protein" value="{{ recipe.protein }}"> <br>
+            <label>Carbs (g):</label> <input type="number" name="carbs" value="{{ recipe.carbs }}"> <br>
+            <label>Fat (g):</label> <input type="number" name="fat" value="{{ recipe.fat }}">
+        </p>
 
         <h3>Tags & Privacy</h3>
         <div>
             <label>Dietary Tag:</label>
             <select name="tags">
-                <option value="None" {% if recipe.tags == 'None' %}selected{% endif %}>None</option>
-                <option value="Vegan" {% if recipe.tags == 'Vegan' %}selected{% endif %}>Vegan</option>
-                <option value="Keto" {% if recipe.tags == 'Keto' %}selected{% endif %}>Keto</option>
-                <option value="Vegetarian" {% if recipe.tags == 'Vegetarian' %}selected{% endif %}>Vegetarian</option>
-                <option value="Gluten-Free" {% if recipe.tags == 'Gluten-Free' %}selected{% endif %}>Gluten-Free</option>
+                {% set tags = ['None', 'Vegan', 'Keto', 'Vegetarian', 'Gluten-Free', 'Sugar-Free', 'Protein', 'Nut-Free'] %}
+                {% for tag in tags %}
+                    <option value="{{ tag }}" {% if recipe.tags == tag %}selected{% endif %}>{{ tag }}</option>
+                {% endfor %}
             </select>
         </div>
 
-        <div>
+        <p>
             <label>
                 <input type="checkbox" name="is_public" {% if recipe.is_public %}checked{% endif %}>
                 Publicly Viewable
             </label>
-        </div>
+        </p>
 
         <button type="submit">Save Changes</button>
         <a href="{{ url_for('index') }}">Cancel</a>
