@@ -270,30 +270,43 @@ def edit_recipe(recipe_id):
         return "Unauthorized", 403
 
     if request.method == 'POST':
-        # Update text fields
+        # 1. Update basic text fields
         recipe.name = request.form.get('name')
         recipe.instructions = request.form.get('instructions')
         recipe.servings = int(request.form.get('servings', 1))
         recipe.tags = request.form.get('tags')
         recipe.is_public = 'is_public' in request.form
         
-        # Update Macros 
+        # 2. Update Macros 
         recipe.calories = int(request.form.get('calories', 0))
         recipe.protein = int(request.form.get('protein', 0))
         recipe.carbs = int(request.form.get('carbs', 0))
         recipe.fat = int(request.form.get('fat', 0))
 
-        # Update Ingredients: Delete existing and re-add the list from the form
+        # 3. Update Ingredients (The Fixed Part)
+        # Delete the old ones first
         Ingredient.query.filter_by(recipe_id=recipe.id).delete()
-        ing_names = request.form.getlist('ingredients')
-        for name in ing_names:
-            if name.strip():
-                new_ing = Ingredient(name=name.strip(), recipe_id=recipe.id)
+        
+        # Get the lists from the form
+        qtys = request.form.getlist('ing_qty')
+        units = request.form.getlist('ing_unit')
+        names = request.form.getlist('ing_name')
+
+        # Loop through the lists and add them back to the database
+        for i in range(len(names)):
+            if names[i].strip():  # Only save if the ingredient name isn't empty
+                new_ing = Ingredient(
+                    quantity=qtys[i],
+                    unit=units[i],
+                    name=names[i].strip(),
+                    recipe_id=recipe.id
+                )
                 db.session.add(new_ing)
 
         db.session.commit()
-        # Redirect back to the dashboard or specific recipe page
         return redirect(url_for('index'))
+
+    return render_template('edit_recipe.html', recipe=recipe)
 
     return render_template('edit_recipe.html', recipe=recipe)
 @app.route('/api/recipes/<int:recipe_id>/rate', methods=['POST'])
