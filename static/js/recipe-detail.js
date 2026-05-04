@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const servingInput = document.getElementById('serving-size');
     const unitToggle = document.getElementById('unit-toggle');
 
-    // Factors for consistent conversion
+    // Factors for consistent mass/volume conversion
     const UNIT_FACTORS = {
         "g": 1,
         "mg": 0.001,
@@ -15,10 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
         "ml": 1,
         "tsp": 4.92892,
         "tbsp": 14.7868,
-        "cup": 240,
-        "piece": 1,
-        "pinch": 0.3
+        "cup": 240
     };
+
+    // [BUG FIX]: Units that should only scale, never convert
+    const NON_CONVERTIBLE_UNITS = ["piece", "pinch", "can", "bottle", "slice"];
 
     window.updateIngredients = function() {
         const newServings = parseFloat(servingInput.value) || 1;
@@ -47,20 +48,30 @@ document.addEventListener('DOMContentLoaded', () => {
             let baseQty = parseFloat(qtySpan.dataset.originalQty) * ratio;
             let originalUnit = row.dataset.baseUnit.toLowerCase();
 
-            // Unit conversion logic
-            if (targetUnit !== 'default' && UNIT_FACTORS[originalUnit] && UNIT_FACTORS[targetUnit]) {
+            // Logic: Skip unit conversion for discrete items
+            if (NON_CONVERTIBLE_UNITS.includes(originalUnit)) {
+                unitSpan.textContent = row.dataset.baseUnit;
+                qtySpan.textContent = Number(baseQty.toFixed(2));
+            } 
+            // Standard conversion logic for measurable units
+            else if (targetUnit !== 'default' && UNIT_FACTORS[originalUnit] && UNIT_FACTORS[targetUnit]) {
                 let qtyInBaseUnit = baseQty * UNIT_FACTORS[originalUnit];
                 baseQty = qtyInBaseUnit / UNIT_FACTORS[targetUnit];
                 unitSpan.textContent = targetUnit;
-            } else {
+                qtySpan.textContent = Number(baseQty.toFixed(2));
+            } 
+            // Default: Just scale the quantity
+            else {
                 unitSpan.textContent = row.dataset.baseUnit;
+                qtySpan.textContent = Number(baseQty.toFixed(2));
             }
 
-            qtySpan.textContent = Number(baseQty.toFixed(2));
             qtySpan.classList.add('highlight');
             setTimeout(() => qtySpan.classList.remove('highlight'), 500);
         });
     };
+
+    // --- Action Functions ---
 
     window.deleteRecipe = async function () {
         if (confirm('Permanently delete this recipe?')) {
@@ -74,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
-
         if (res.ok) {
             alert('Recipe forked successfully!');
             window.location.href = '/';
@@ -111,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form.style.display = form.style.display === 'none' ? 'block' : 'none';
     };
 
+    // Event Listeners for Real-Time Updates
     servingInput?.addEventListener('input', window.updateIngredients);
     unitToggle?.addEventListener('change', window.updateIngredients);
 });
