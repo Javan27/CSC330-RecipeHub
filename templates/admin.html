@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Admin Panel</title>
+</head>
+<body class="page-body">
+
+    <div class="container dashboard-container">
+        <h1 class="page-title">Admin Control Panel</h1>
+        
+        <p class="nav-bar">
+            <a class="nav-link" href="/">← Back to Dashboard</a>
+        </p>
+
+        <hr class="divider">
+
+        <div class="card" style="margin-bottom: 30px;">
+            <h2 class="section-title">User Management</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>
+                            {{ user.username }} 
+                            {% if user.is_admin %}
+                                <span class="badge-admin">ADMIN</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ 'Administrator' if user.is_admin else 'Standard User' }}</td>
+                        <td>
+                            {% if not user.is_admin %}
+                            <form method="POST" action="/admin/delete_user/{{ user.id }}"
+                                  onsubmit="return confirm('CRITICAL: Delete user {{ user.username }} and ALL their recipes?')">
+                                <button class="btn btn-delete" type="submit">Delete User</button>
+                            </form>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2 class="section-title">Public Recipe Oversight</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Recipe Name</th>
+                        <th>Creator</th>
+                        <th>Category</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for recipe in recipes %}
+                    <tr>
+                        <td>{{ recipe.id }}</td>
+                        <td>
+                            <a class="recipe-link" href="/recipe/{{ recipe.id }}">
+                                {{ recipe.name }}
+                            </a>
+                        </td>
+                        <td>{{ recipe.owner.username }}</td>
+                        <td>
+                            {% if recipe.tags %}
+                                <span class="badge-admin" style="background: var(--dark);">{{ recipe.tags }}</span>
+                            {% else %}
+                                <span class="text-muted">None</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="POST" action="/admin/delete_recipe/{{ recipe.id }}"
+                                  onsubmit="return confirm('Delete recipe {{ recipe.name }}?')">
+                                <button class="btn btn-delete" type="submit">Remove Recipe</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
