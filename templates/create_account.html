@@ -2,36 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>Create an Account</title>
-    <style>
-        .auth-container { max-width: 300px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
-        .form-group { margin-bottom: 15px; }
-        .btn { padding: 8px 15px; cursor: pointer; }
-    </style>
 </head>
-<body>
-    <div class="auth-container">
-        <h2>Create Your Account</h2>
-        
-        <form action="/create_account" method="POST">
-            <div class="form-group">
-                <label>Create Username</label><br>
-                <input type="text" name="username" style="width: 100%;" required>
-            </div>
 
-            <div class="form-group">
-                <label>Password</label><br>
-                <input type="password" name="password" style="width: 100%;" required>
-            </div>
+<body class="page-body">
+    <div class="container form-container">
+        <div class="card form-card">
+            <h2 class="form-title">Create Your Account</h2>
 
-            <div class="form-group">
-                <label>Confirm Password</label><br>
-                <input type="password" name="confirm_password" style="width: 100%;" required>
-            </div>
+            <form action="/create_account" method="POST">
+                <div class="form-group">
+                    <label class="form-label">Create Username</label>
+                    <input class="form-input" type="text" name="username" required>
+                </div>
 
-            <button type="submit" class="btn" style="background-color: #4CAF50; color: white; border: none;">Submit</button>
-            <a href="/login"><button type="button" class="btn">Back to Login</button></a>
-        </form>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input class="form-input" type="password" name="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input class="form-input" type="password" name="confirm_password" required>
+                </div>
+
+                <div class="form-row">
+                    <button class="btn btn-primary" type="submit">Submit</button>
+                    <a href="/login">
+                        <button class="btn btn-secondary" type="button">Back to Login</button>
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </body>
 </html>
