@@ -6,10 +6,12 @@
     <title>Public Recipe Feed</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .toolbar { margin-bottom: 24px; display: flex; gap: 16px; align-items: center; }
+        /* [Bug Fix: Spacing for the 'Hugging' Toolbar issue] */
+        .toolbar-group { display: flex; align-items: center; gap: 12px; }
+        .toolbar-label { font-weight: bold; margin-right: 5px; }
         .active-sort { background: var(--orange) !important; color: white !important; }
-        .fork-label { font-size: 13px; color: var(--muted); font-style: italic; margin-top: -10px; margin-bottom: 10px; display: block; }
-        .rating-stars { color: #f1c40f; font-weight: bold; }
+        .fork-label { font-size: 13px; color: var(--muted); font-style: italic; margin-top: -8px; margin-bottom: 8px; display: block; }
+        .rating-stars { color: #f1c40f; font-weight: bold; font-size: 1.1em; }
     </style>
 </head>
 <body class="page-body">
@@ -25,18 +27,18 @@
 
         <h1 class="page-title">Global Discovery Feed</h1>
 
-        <div class="toolbar card">
-            <div>
-                <span class="section-label">Sort By:</span>
+        <div class="toolbar card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; padding: 20px;">
+            <div class="toolbar-group">
+                <span class="toolbar-label">Sort By:</span>
                 <a href="/feed?sort=newest&tag={{ current_tag }}" 
                    class="btn btn-secondary {{ 'active-sort' if current_sort == 'newest' }}">Newest</a>
                 <a href="/feed?sort=highest_rated&tag={{ current_tag }}" 
                    class="btn btn-secondary {{ 'active-sort' if current_sort == 'highest_rated' }}">Highest Rated</a>
             </div>
 
-            <div style="margin-left: auto;">
-                <span class="section-label">Filter Tag:</span>
-                <select class="form-select" onchange="location = this.value;">
+            <div class="toolbar-group">
+                <span class="toolbar-label">Filter Tag:</span>
+                <select class="form-select" onchange="location = this.value;" style="min-width: 150px;">
                     <option value="/feed?sort={{ current_sort }}">All Categories</option>
                     {% for tag in ['keto', 'sugar-free', 'protein', 'nut-free', 'vegan'] %}
                         <option value="/feed?sort={{ current_sort }}&tag={{ tag }}" {{ 'selected' if current_tag == tag }}>
@@ -52,7 +54,7 @@
         {% if recipes %}
             <div id="recipe-grid" class="grid">
                 {% for recipe in recipes %}
-                    <div class="recipe-card card">
+                    <div class="recipe-card card" style="display: flex; flex-direction: column;">
                         <h2 class="recipe-title">
                             <a class="recipe-link" href="/recipe/{{ recipe.id }}">
                                 {{ recipe.name }}
@@ -63,15 +65,15 @@
                             <span class="fork-label">Forked from: {{ recipe.forked_from }}</span>
                         {% endif %}
 
-                        <p class="recipe-author">
+                        <p class="recipe-author" style="margin-bottom: 10px;">
                             <em>By: <span class="author-name">{{ recipe.owner.username }}</span></em>
                         </p>
 
-                        <div class="recipe-meta" style="margin-bottom: 12px;">
+                        <div class="recipe-meta" style="margin-bottom: 15px;">
                             {% if recipe.tags %}
                                 <span class="badge-admin" style="background: var(--dark);">{{ recipe.tags|capitalize }}</span>
                             {% endif %}
-                            <span style="margin-left: 8px;">{{ recipe.calories or 0 }} Cal</span>
+                            <span style="margin-left: 8px; font-size: 0.9em; color: var(--muted);">{{ recipe.calories or 0 }} Cal</span>
                         </div>
 
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
@@ -79,19 +81,21 @@
                                 {% if recipe.ratings %}
                                     ⭐ {{ (recipe.ratings|sum(attribute='stars') / recipe.ratings|length)|round(1) }}
                                 {% else %}
-                                    <span style="color: var(--muted); font-weight: normal; font-size: 0.9em;">Unrated</span>
+                                    <span style="color: var(--muted); font-weight: normal; font-size: 0.85em;">Unrated</span>
                                 {% endif %}
                             </span>
                             
                             <a href="/recipe/{{ recipe.id }}">
-                                <button class="btn btn-primary">View</button>
+                                <button class="btn btn-primary">View Recipe</button>
                             </a>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <p class="empty-state">No recipes found matching these filters.</p>
+            <div class="card" style="text-align: center; padding: 40px;">
+                <p class="empty-state">No recipes found matching these filters. Try adjusting your search!</p>
+            </div>
         {% endif %}
 
     </div>
