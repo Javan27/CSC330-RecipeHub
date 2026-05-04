@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const currentUsername = window.APP_DATA?.username;
 
+    // Display current username on dashboard
     const userEl = document.getElementById('current-user');
     if (userEl) userEl.innerText = currentUsername;
 
@@ -50,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // [Bug Fix: Fixed Alignment and Unit List for Dynamic Rows]
     document.getElementById('add-ingredient-btn')?.addEventListener('click', () => {
         const container = document.getElementById('ingredient-container');
 
@@ -60,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         newRow.style.marginBottom = '10px';
 
         newRow.innerHTML = `
-            <input type="text" class="form-input ing-qty" placeholder="Qty" style="width: 80px;">
+            <input class="form-input ing-qty" type="text" placeholder="Qty" style="width: 80px;">
             <select class="form-select ing-unit" style="width: 130px;">
                 <option value="">Unit</option>
                 <option value="tsp">Teaspoon</option>
@@ -73,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <option value="pinch">Pinch</option>
                 <option value="piece">Piece</option>
             </select>
-            <input type="text" class="form-input ing-name" placeholder="Ingredient Name" style="flex: 1;">
+            <input class="form-input ing-name" type="text" placeholder="Ingredient Name" style="flex: 1;">
         `;
 
         container.appendChild(newRow);
@@ -95,24 +97,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rows = document.querySelectorAll('.ingredient-row');
         const ingredients = [];
-        let validationError = false;
+        let hasIncompleteIngredient = false;
 
         rows.forEach(row => {
             const name = row.querySelector('.ing-name').value.trim();
             const unit = row.querySelector('.ing-unit').value;
             const quantity = row.querySelector('.ing-qty').value.trim();
 
+            // If any field is filled, all must be filled (name and unit required)
             if (name || quantity || unit) {
                 if (!name || !unit) {
-                    validationError = true;
+                    hasIncompleteIngredient = true;
                 } else {
-                    ingredients.push({ quantity, unit, name });
+                    ingredients.push({ quantity: quantity || "1", unit, name });
                 }
             }
         });
 
-        if (validationError) {
-            return alert('All added ingredients must have both a name and a unit!');
+        // [Bug Fix: Prevention of empty ingredient list]
+        if (ingredients.length === 0) {
+            return alert('You must add at least one valid ingredient (Name and Unit required)!');
+        }
+
+        if (hasIncompleteIngredient) {
+            return alert('One or more ingredients are missing a name or a unit.');
         }
 
         const response = await fetch('/api/recipes', {
@@ -133,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (response.ok) {
+            // Reset form
             nameEl.value = '';
             servingEl.value = '1';
             instructionsEl.value = '';
@@ -142,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
             carbEl.value = '0';
             fatEl.value = '0';
             
-            // Clear and reset to one empty aligned row
             const container = document.getElementById('ingredient-container');
             container.innerHTML = `
                 <p class="section-label"><strong>Ingredients (Name and Unit Required):</strong></p>
