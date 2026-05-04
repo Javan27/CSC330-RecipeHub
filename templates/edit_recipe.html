@@ -1,93 +1,113 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Edit Recipe</title>
-    <style>
-        .ingredient-row { margin-bottom: 5px; display: flex; gap: 5px; }
-        .ing-qty { width: 50px; }
-        .ing-unit { width: 100px; }
-    </style>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Edit Recipe: {{ recipe.name }}</title>
 </head>
-<body>
-    <h1>Edit: {{ recipe.name }}</h1>
+<body class="page-body">
 
-    <form method="POST">
-        <!-- Basic Info & Instructions -->
-        <div>
-            <label>Recipe Name:</label><br>
-            <input type="text" name="name" value="{{ recipe.name }}" required>
-        </div>
-        <br>
-        <div>
-            <label>Instructions:</label><br>
-            <textarea name="instructions" rows="5" style="width: 100%;">{{ recipe.instructions }}</textarea>
-        </div>
+    <div class="container form-container">
+        <h1 class="page-title">Edit Recipe</h1>
 
-        <h3>Ingredients</h3>
-        <div id="ingredient-container">
-            {% for ing in recipe.ingredients %}
-            <div class="ingredient-row">
-                <input type="text" name="ing_qty" class="ing-qty" value="{{ ing.quantity }}" placeholder="Qty">
-                <select name="ing_unit" class="ing-unit">
-                    <option value="">Unit</option>
-                    <option value="tsp" {% if ing.unit == 'tsp' %}selected{% endif %}>Teaspoon</option>
-                    <option value="tbsp" {% if ing.unit == 'tbsp' %}selected{% endif %}>Tablespoon</option>
-                    <option value="cup" {% if ing.unit == 'cup' %}selected{% endif %}>Cup</option>
-                    <option value="g" {% if ing.unit == 'g' %}selected{% endif %}>Grams</option>
-                    <option value="oz" {% if ing.unit == 'oz' %}selected{% endif %}>Ounces</option>
-                    <option value="ml" {% if ing.unit == 'ml' %}selected{% endif %}>Milliliters</option>
-                    <option value="lb" {% if ing.unit == 'lb' %}selected{% endif %}>Pounds</option>
-                    <option value="pinch" {% if ing.unit == 'pinch' %}selected{% endif %}>Pinch</option>
-                    <option value="piece" {% if ing.unit == 'piece' %}selected{% endif %}>Piece</option>
-                </select>
-                <input type="text" name="ing_name" value="{{ ing.name }}" placeholder="Ingredient Name">
-            </div>
-            {% endfor %}
-        </div>
-        
-        <button type="button" id="add-ingredient-btn" style="margin-top: 10px;">+ Add Ingredient</button>
+        <div class="card form-card">
+            <form method="POST" action="/edit_recipe/{{ recipe.id }}">
+                
+                <div class="form-group">
+                    <label class="form-label">Recipe Name:</label>
+                    <input class="form-input" type="text" name="name" value="{{ recipe.name }}" required>
+                </div>
 
-        <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
-            <h3>Macros</h3>
-            <label>Calories:</label> 
-            <input type="number" name="calories" value="{{ recipe.calories or 0 }}"> <br><br>
-            
-            <label>Protein (g):</label> 
-            <input type="number" name="protein" value="{{ recipe.protein or 0 }}"> <br><br>
-            
-            <label>Carbs (g):</label> 
-            <input type="number" name="carbs" value="{{ recipe.carbs or 0 }}"> <br><br>
-            
-            <label>Fat (g):</label> 
-            <input type="number" name="fat" value="{{ recipe.fat or 0 }}">
-        </div>
+                <div class="form-group">
+                    <label class="form-label">Servings:</label>
+                    <input class="form-input" type="number" name="servings" value="{{ recipe.servings }}" min="1">
+                </div>
 
-        <div style="margin-top: 20px;">
-            <label>Dietary Tag:</label>
-            <select name="tags">
-                <option value="">No Tag</option>
-                {% for tag in ['keto', 'sugar-free', 'protein', 'nut-free', 'vegan'] %}
-                    <option value="{{ tag }}" {% if recipe.tags == tag %}selected{% endif %}>{{ tag|capitalize }}</option>
-                {% endfor %}
-            </select>
+                <div class="form-group">
+                    <label class="form-label">Instructions:</label>
+                    <textarea class="form-textarea" name="instructions">{{ recipe.instructions }}</textarea>
+                </div>
 
-            <label style="margin-left: 20px;">
-                <input type="checkbox" name="is_public" {% if recipe.is_public %}checked{% endif %}> Make Public
-            </label>
+                <hr class="divider">
+
+                <h3 class="section-title">Ingredients</h3>
+                <div id="ingredient-container">
+                    {% for ing in recipe.ingredients %}
+                    <div class="ingredient-row form-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input class="form-input ing-qty" type="text" name="ing_qty" value="{{ ing.quantity }}" placeholder="Qty" style="width: 80px;">
+                        
+                        <select class="form-select ing-unit" name="ing_unit" style="width: 130px;">
+                            <option value="">Unit</option>
+                            {% for unit_val, unit_label in [('tsp', 'Teaspoon'), ('tbsp', 'Tablespoon'), ('cup', 'Cup'), ('g', 'Grams'), ('oz', 'Ounces'), ('ml', 'Milliliters'), ('lb', 'Pounds'), ('pinch', 'Pinch'), ('piece', 'Piece')] %}
+                                <option value="{{ unit_val }}" {% if ing.unit == unit_val %}selected{% endif %}>{{ unit_label }}</option>
+                            {% endfor %}
+                        </select>
+                        
+                        <input class="form-input" type="text" name="ing_name" value="{{ ing.name }}" placeholder="Ingredient Name" style="flex: 1;">
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <button class="btn btn-secondary" type="button" id="add-ingredient-btn" style="margin-top: 10px;">
+                    + Add Ingredient
+                </button>
+
+                <hr class="divider">
+
+                <h3 class="section-title">Nutrition Macros</h3>
+                <div class="form-row card" style="background: #fdfdfd; padding: 15px; border: 1px solid var(--border); display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div class="form-group">
+                        <label class="form-label">Calories</label>
+                        <input class="form-input" type="number" name="calories" value="{{ recipe.calories or 0 }}" style="width: 85px;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Protein (g)</label>
+                        <input class="form-input" type="number" name="protein" value="{{ recipe.protein or 0 }}" style="width: 85px;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Carbs (g)</label>
+                        <input class="form-input" type="number" name="carbs" value="{{ recipe.carbs or 0 }}" style="width: 85px;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fat (g)</label>
+                        <input class="form-input" type="number" name="fat" value="{{ recipe.fat or 0 }}" style="width: 85px;">
+                    </div>
+                </div>
+
+                <div class="form-row" style="display: flex; gap: 20px; align-items: center; margin-top: 20px;">
+                    <div class="form-group">
+                        <label class="form-label">Category Tag:</label>
+                        <select class="form-select" name="tags">
+                            <option value="">No Tag</option>
+                            {% for tag in ['keto', 'sugar-free', 'protein', 'nut-free', 'vegan'] %}
+                                <option value="{{ tag }}" {% if recipe.tags == tag %}selected{% endif %}>{{ tag|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <label class="checkbox-label" style="display: flex; align-items: center; gap: 5px; cursor: pointer; margin-top: 25px;">
+                        <input type="checkbox" name="is_public" {% if recipe.is_public %}checked{% endif %}> 
+                        Make Public
+                    </label>
+                </div>
+
+                <div class="form-row" style="margin-top: 30px; gap: 15px;">
+                    <button class="btn btn-primary" type="submit">Save Changes</button>
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary" style="text-decoration: none; text-align: center;">Cancel</a>
+                </div>
+            </form>
         </div>
-        <hr>
-        <button type="submit">Save Changes</button>
-        <a href="{{ url_for('index') }}">Cancel</a>
-    </form>
+    </div>
 
     <script>
         document.getElementById('add-ingredient-btn').addEventListener('click', () => {
             const container = document.getElementById('ingredient-container');
             const newRow = document.createElement('div');
-            newRow.className = 'ingredient-row';
+            newRow.className = 'ingredient-row form-row';
+            newRow.style = "display: flex; gap: 10px; margin-bottom: 10px;";
             newRow.innerHTML = `
-                <input type="text" name="ing_qty" class="ing-qty" placeholder="Qty">
-                <select name="ing_unit" class="ing-unit">
+                <input class="form-input ing-qty" type="text" name="ing_qty" placeholder="Qty" style="width: 80px;">
+                <select class="form-select ing-unit" name="ing_unit" style="width: 130px;">
                     <option value="">Unit</option>
                     <option value="tsp">Teaspoon</option>
                     <option value="tbsp">Tablespoon</option>
@@ -99,7 +119,7 @@
                     <option value="pinch">Pinch</option>
                     <option value="piece">Piece</option>
                 </select>
-                <input type="text" name="ing_name" placeholder="Ingredient Name">
+                <input class="form-input" type="text" name="ing_name" placeholder="Ingredient Name" style="flex: 1;">
             `;
             container.appendChild(newRow);
         });
