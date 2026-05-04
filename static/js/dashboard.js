@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3><a class="recipe-link" href="/recipe/${recipe.id}">${recipe.name}</a></h3>
                 <p><strong>Servings:</strong> ${recipe.servings}</p>
                 <p><strong>Rating:</strong> ${rating}</p>
-                <p><strong>Calories:</strong> ${recipe.calories || 0}</p>
                 <div style="margin: 10px 0;">
                     <a href="/edit_recipe/${recipe.id}"><button class="btn btn-secondary" type="button">Edit Recipe</button></a>
                 </div>
@@ -44,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadDashboard() {
-        // Fetch only the recipes for the logged-in user
         const res = await fetch('/api/recipes');
         if (res.ok) {
             const data = await res.json();
@@ -57,20 +55,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newRow = document.createElement('div');
         newRow.className = 'ingredient-row form-row';
+        newRow.style.display = 'flex';
+        newRow.style.gap = '10px';
+        newRow.style.marginBottom = '10px';
 
         newRow.innerHTML = `
-            <input type="text" class="form-input ing-qty" placeholder="Qty" style="width: 70px;">
-            <select class="form-select ing-unit" style="width: 120px;">
+            <input type="text" class="form-input ing-qty" placeholder="Qty" style="width: 80px;">
+            <select class="form-select ing-unit" style="width: 130px;">
                 <option value="">Unit</option>
-                <option value="tsp">tsp</option>
-                <option value="tbsp">tbsp</option>
-                <option value="cup">cup</option>
-                <option value="g">g</option>
-                <option value="oz">oz</option>
-                <option value="ml">ml</option>
-                <option value="lb">lb</option>
-                <option value="pinch">pinch</option>
-                <option value="piece">piece</option>
+                <option value="tsp">Teaspoon</option>
+                <option value="tbsp">Tablespoon</option>
+                <option value="cup">Cup</option>
+                <option value="g">Grams</option>
+                <option value="oz">Ounces</option>
+                <option value="ml">Milliliters</option>
+                <option value="lb">Pounds</option>
+                <option value="pinch">Pinch</option>
+                <option value="piece">Piece</option>
             </select>
             <input type="text" class="form-input ing-name" placeholder="Ingredient Name" style="flex: 1;">
         `;
@@ -85,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const tagsEl = document.getElementById('new-tags');
         const isPublicEl = document.getElementById('new-is-public');
         
-        // Nutrition Elements
         const calEl = document.getElementById('new-calories');
         const protEl = document.getElementById('new-protein');
         const carbEl = document.getElementById('new-carbs');
@@ -94,12 +94,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!nameEl.value.trim()) return alert('Recipe name cannot be blank!');
 
         const rows = document.querySelectorAll('.ingredient-row');
+        const ingredients = [];
+        let validationError = false;
 
-        const ingredients = Array.from(rows).map(row => ({
-            quantity: row.querySelector('.ing-qty').value,
-            unit: row.querySelector('.ing-unit').value,
-            name: row.querySelector('.ing-name').value
-        })).filter(ing => ing.name.trim() !== "");
+        rows.forEach(row => {
+            const name = row.querySelector('.ing-name').value.trim();
+            const unit = row.querySelector('.ing-unit').value;
+            const quantity = row.querySelector('.ing-qty').value.trim();
+
+            if (name || quantity || unit) {
+                if (!name || !unit) {
+                    validationError = true;
+                } else {
+                    ingredients.push({ quantity, unit, name });
+                }
+            }
+        });
+
+        if (validationError) {
+            return alert('All added ingredients must have both a name and a unit!');
+        }
 
         const response = await fetch('/api/recipes', {
             method: 'POST',
@@ -111,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ingredients: ingredients,
                 tags: tagsEl.value,
                 is_public: isPublicEl.checked,
-                // Include Nutrition Data
                 calories: parseInt(calEl.value) || 0,
                 protein: parseInt(protEl.value) || 0,
                 carbs: parseInt(carbEl.value) || 0,
@@ -120,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (response.ok) {
-            // Full UI Reset
             nameEl.value = '';
             servingEl.value = '1';
             instructionsEl.value = '';
@@ -130,12 +142,24 @@ document.addEventListener('DOMContentLoaded', () => {
             carbEl.value = '0';
             fatEl.value = '0';
             
-            //Reset ingredients to just one row
-            document.getElementById('ingredient-container').innerHTML = `
-                <p class="section-label"><strong>Ingredients:</strong></p>
-                <div class="ingredient-row form-row">
-                    <input class="form-input ing-qty" type="text" placeholder="Qty" style="width: 70px;">
-                    <select class="form-select ing-unit" style="width: 120px;"><option value="">Unit</option><option value="tsp">tsp</option><option value="g">g</option></select>
+            // Clear and reset to one empty aligned row
+            const container = document.getElementById('ingredient-container');
+            container.innerHTML = `
+                <p class="section-label"><strong>Ingredients (Name and Unit Required):</strong></p>
+                <div class="ingredient-row form-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input class="form-input ing-qty" type="text" placeholder="Qty" style="width: 80px;">
+                    <select class="form-select ing-unit" style="width: 130px;">
+                        <option value="">Unit</option>
+                        <option value="tsp">Teaspoon</option>
+                        <option value="tbsp">Tablespoon</option>
+                        <option value="cup">Cup</option>
+                        <option value="g">Grams</option>
+                        <option value="oz">Ounces</option>
+                        <option value="ml">Milliliters</option>
+                        <option value="lb">Pounds</option>
+                        <option value="pinch">Pinch</option>
+                        <option value="piece">Piece</option>
+                    </select>
                     <input class="form-input ing-name" type="text" placeholder="Ingredient Name" style="flex: 1;">
                 </div>`;
 
