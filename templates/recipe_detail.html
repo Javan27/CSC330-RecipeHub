@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
-<head><title>{{ recipe.name }} Details</title></head>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>{{ recipe.name }} Details</title>
+</head>
 <body>
     <h1>{{ recipe.name }}</h1>
     <p><strong>Created by:</strong> {{ recipe.owner.username }}</p>

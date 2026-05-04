@@ -2,34 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>Create an Account</title>
 </head>
-<body>
-    <h2>Create Your Account</h2>
-    
-    <form action="/create_account" method="POST">
-        <div>
-            <label>Create Username</label>
-            <input type="text" name="username" required>
-        </div>
 
-        <div>
-            <label>Password</label>
-            <input type="password" name="password" required>
-        </div>
+<div class="form-container">
+  <h2 class="form-title">Create Your Account</h2>
 
-        <div>
-            <label>Confirm Password</label>
-            <input type="password" name="confirm_password" required>
-        </div>
+  <form action="/create_account" method="POST">
 
-        <button type="submit">Submit</button>
-    </form>
+    <div class="form-group">
+      <label class="form-label">Create Username</label>
+      <input class="form-input" type="text" name="username" required>
+    </div>
 
-    <hr>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" name="password" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Confirm Password</label>
+      <input class="form-input" type="password" name="confirm_password" required>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Submit</button>
+  </form>
+
+  <div class="form-footer">
     <p>Already have an account?</p>
     <a href="/login">
-        <button type="button">Back to Login</button>
+      <button class="btn btn-secondary" type="button">Back to Login</button>
     </a>
-</body>
-</html>
+  </div>
+</div>

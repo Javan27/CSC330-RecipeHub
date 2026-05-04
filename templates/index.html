@@ -2,14 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>Recipe Dashboard</title>
-    <style>
-        .recipe-card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }
-        .ingredient-row { margin-bottom: 5px; display: flex; gap: 5px; }
-        .ing-qty { width: 50px; }
-        .ing-unit { width: 100px; }
-        #new-instructions { width: 100%; height: 80px; margin-top: 10px; }
-    </style>
 </head>
 <body>
     <h1>Recipe Dashboard</h1>
