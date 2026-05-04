@@ -12,9 +12,16 @@
         <label>Ingredients:</label><br>
         <input type="text" name="q_ing" placeholder="e.g. Chicken, Tomato..." value="{{ q_ing or '' }}">
     </div>
-    <div>
-        <label>Dietary Tags:</label><br>
-        <input type="text" name="q_tag" placeholder="e.g. Vegan, Keto..." value="{{ q_tag or '' }}">
+    <div style="display: flex; flex-direction: column;">
+        <label style="font-weight: bold;">Dietary Tag</label>
+        <select name="q_tag">
+            <option value="">Any Tag</option>
+            <option value="Vegan" {% if q_tag == 'Vegan' %}selected{% endif %}>Vegan</option>
+            <option value="Keto" {% if q_tag == 'Keto' %}selected{% endif %}>Keto</option>
+            <option value="Gluten-Free" {% if q_tag == 'Gluten-Free' %}selected{% endif %}>Gluten-Free</option>
+            <option value="Vegetarian" {% if q_tag == 'Vegetarian' %}selected{% endif %}>Vegetarian</option>
+            <!-- Add any other tags you used in Create Recipe here -->
+        </select>
     </div>
     <button type="submit">Search</button>
 </form>
