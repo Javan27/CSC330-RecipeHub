@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 import os
 
 app = Flask(__name__)
@@ -58,7 +58,7 @@ class Comment(db.Model):
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
     username = db.Column(db.String(80))
 
-#Auth Helpers [Bug Fix: Back Button Logic]
+#Auth Helpers
 def auth_error(message):
     return f"<h3>{message}</h3><br><button onclick='window.history.back()'>Go Back</button>"
 
@@ -67,8 +67,27 @@ def auth_error(message):
 def feed():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    recipes = Recipe.query.filter_by(is_public=True).order_by(Recipe.id.desc()).all()
-    return render_template('feed.html', recipes=recipes, username=session.get('username'))
+    
+    sort_by = request.args.get('sort', 'newest')
+    tag_filter = request.args.get('tag', '')
+
+    #Base query for public recipes
+    query = Recipe.query.filter_by(is_public=True)
+
+    #[Feature: Global Feed Tag Filter]
+    if tag_filter:
+        query = query.filter(Recipe.tags == tag_filter)
+
+    #[Feature: Global Feed Sorting Logic]
+    if sort_by == 'highest_rated':
+        #Join with ratings and sort by the average of stars
+        query = query.outerjoin(Rating).group_by(Recipe.id).order_by(func.avg(Rating.stars).desc())
+    else:
+        #Default to newest
+        query = query.order_by(Recipe.id.desc())
+
+    recipes = query.all()
+    return render_template('feed.html', recipes=recipes, username=session.get('username'), current_sort=sort_by, current_tag=tag_filter)
 
 @app.route('/')
 def index():
@@ -82,7 +101,6 @@ def recipe_detail(recipe_id):
         return redirect(url_for('login'))
     
     recipe = Recipe.query.get_or_404(recipe_id)
-    
     ratings = Rating.query.filter_by(recipe_id=recipe_id).all()
     avg_val = round(sum([r.stars for r in ratings]) / len(ratings), 1) if ratings else "Not yet rated"
     user_rating = Rating.query.filter_by(recipe_id=recipe_id, user_id=session['user_id']).first()
@@ -146,19 +164,14 @@ def search():
         return render_template('search_results.html', results=[], q_name=q_name, q_ing=q_ing, q_tag=q_tag)
 
     results = query_obj.distinct().all()
-    
     results_data = []
     for r in results:
         context = None
-        #[Bug Fix: Ingredient Search Context]
         if q_ing:
             match = next((i.name for i in r.ingredients if q_ing.lower() in i.name.lower()), None)
             if match: context = f"Has ingredient: {match}"
         
-        results_data.append({
-            'recipe': r,
-            'context': context
-        })
+        results_data.append({'recipe': r, 'context': context})
 
     return render_template('search_results.html', results=results_data, q_name=q_name, q_ing=q_ing, q_tag=q_tag)
 
@@ -186,6 +199,7 @@ def create_recipe():
     if not data.get('name') or not data['name'].strip():
         return jsonify({'error': 'Recipe name cannot be blank'}), 400
 
+    #[Bug Fix: Servings Defaulting Logic]
     try:
         servings = int(data.get('servings', 1))
         if servings < 1: servings = 1
