@@ -43,15 +43,20 @@
             </div>
 
             <div id="ingredient-container">
-                <p class="section-label"><strong>Ingredients:</strong></p>
-                <div class="ingredient-row form-row">
+                <p class="section-label"><strong>Ingredients (Name and Unit Required):</strong></p>
+                <div class="ingredient-row form-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <input class="form-input ing-qty" type="text" placeholder="Qty" style="width: 80px;">
-                    <select class="form-select ing-unit" style="width: 120px;">
+                    <select class="form-select ing-unit" style="width: 130px;">
                         <option value="">Unit</option>
+                        <option value="tsp">Teaspoon</option>
+                        <option value="tbsp">Tablespoon</option>
+                        <option value="cup">Cup</option>
                         <option value="g">Grams</option>
                         <option value="oz">Ounces</option>
-                        <option value="cup">Cup</option>
-                        <option value="ml">ml</option>
+                        <option value="ml">Milliliters</option>
+                        <option value="lb">Pounds</option>
+                        <option value="pinch">Pinch</option>
+                        <option value="piece">Piece</option>
                     </select>
                     <input class="form-input ing-name" type="text" placeholder="Ingredient Name" style="flex: 1;">
                 </div>
@@ -66,7 +71,7 @@
                 <textarea class="form-textarea" id="new-instructions" placeholder="Step-by-step guide..."></textarea>
             </div>
 
-            <div class="form-row card" style="background: #fdfdfd; padding: 15px; border: 1px solid var(--border); margin-bottom: 20px;">
+            <div class="form-row card" style="background: #fdfdfd; padding: 15px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
                 <div class="form-group">
                     <label class="form-label">Calories</label>
                     <input class="form-input" type="number" id="new-calories" value="0" style="width: 85px;">
@@ -85,24 +90,26 @@
                 </div>
             </div>
             
-            <div class="form-row spaced-row">
+            <div class="form-row" style="display: flex; gap: 20px; align-items: center;">
                 <div class="form-group">
                     <label class="form-label">Category Tag:</label>
                     <select class="form-select" id="new-tags">
                         <option value="">No Tag</option>
                         <option value="keto">Keto</option>
-                        <option value="vegan">Vegan</option>
+                        <option value="sugar-free">Sugar-Free</option>
                         <option value="protein">Protein</option>
+                        <option value="nut-free">Nut-Free</option>
+                        <option value="vegan">Vegan</option>
                     </select>
                 </div>
 
-                <label class="checkbox-label" style="margin-top: 25px;">
+                <label class="checkbox-label" style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
                     <input type="checkbox" id="new-is-public" checked> 
                     Make Public
                 </label>
             </div>
 
-            <button class="btn btn-primary" id="btn-create-recipe" style="width: 100%;">
+            <button class="btn btn-primary" id="btn-create-recipe" style="width: 100%; margin-top: 15px;">
                 Create Recipe
             </button>
 
