@@ -136,30 +136,48 @@ def logout():
 
 @app.route('/search')
 def search():
-    query = request.args.get('q', '').strip()
-    results_data = []
+    # Three separate boxes
+    q_name = request.args.get('q_name', '').strip()
+    q_ing = request.args.get('q_ing', '').strip()
+    q_tag = request.args.get('q_tag', '').strip()
     
-    if query:
-        #Privacy Logic: Join with Recipe to check is_public OR ownership
+    results_data = []
+
+    # Only search if at least one box has text
+    if q_name or q_ing or q_tag:
+        query_filters = []
+
+        # Box 1: Name
+        if q_name:
+            query_filters.append(Recipe.name.ilike(f'%{q_name}%'))
+        
+        # Box 2: Ingredient (requires Join)
+        if q_ing:
+            query_filters.append(Ingredient.name.ilike(f'%{q_ing}%'))
+        
+        # Box 3: Tags
+        if q_tag:
+            query_filters.append(Recipe.tags.ilike(f'%{q_tag}%'))
+
+        # Privacy logic: Always required
+        privacy_filter = ((Recipe.is_public == True) | (Recipe.user_id == session.get('user_id')))
+
+        # Combine all active boxes using OR so we find matches in any category
         results = Recipe.query.outerjoin(Ingredient).filter(
-            ((Recipe.name.contains(query)) |
-             (Ingredient.name.contains(query)) |
-             (Recipe.tags.contains(query))) &
-            ((Recipe.is_public == True) | (Recipe.user_id == session.get('user_id')))
+            or_(*query_filters) & privacy_filter
         ).distinct().all()
 
         for r in results:
-            matched_ingredient = next((ing.name for ing in r.ingredients if query.lower() in ing.name.lower()), None)
-            if matched_ingredient:
-                match_context = f"Has ingredient: {matched_ingredient}"
-            elif r.tags and query.lower() in r.tags.lower():
-                match_context = f"Matched tag: {query}"
-            else:
-                match_context = None 
-            
-            results_data.append({'recipe': r, 'context': match_context})
-            
-    return render_template('search_results.html', results=results_data, query=query)
+            results_data.append({
+                'recipe': r,
+                'calories': r.calories
+            })
+
+    return render_template('search_results.html', 
+                           results=results_data, 
+                           q_name=q_name, 
+                           q_ing=q_ing, 
+                           q_tag=q_tag)
 #API Routes
 
 @app.route('/api/recipes', methods=['GET'])
