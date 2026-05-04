@@ -47,7 +47,34 @@
         
         <button type="button" id="add-ingredient-btn" style="margin-top: 10px;">+ Add Ingredient</button>
 
-        <!-- Macros, Tags, and Privacy (Keep your existing code for these) -->
+        <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
+            <h3>Macros</h3>
+            <label>Calories:</label> 
+            <input type="number" name="calories" value="{{ recipe.calories or 0 }}"> <br><br>
+            
+            <label>Protein (g):</label> 
+            <input type="number" name="protein" value="{{ recipe.protein or 0 }}"> <br><br>
+            
+            <label>Carbs (g):</label> 
+            <input type="number" name="carbs" value="{{ recipe.carbs or 0 }}"> <br><br>
+            
+            <label>Fat (g):</label> 
+            <input type="number" name="fat" value="{{ recipe.fat or 0 }}">
+        </div>
+
+        <div style="margin-top: 20px;">
+            <label>Dietary Tag:</label>
+            <select name="tags">
+                <option value="">No Tag</option>
+                {% for tag in ['keto', 'sugar-free', 'protein', 'nut-free', 'vegan'] %}
+                    <option value="{{ tag }}" {% if recipe.tags == tag %}selected{% endif %}>{{ tag|capitalize }}</option>
+                {% endfor %}
+            </select>
+
+            <label style="margin-left: 20px;">
+                <input type="checkbox" name="is_public" {% if recipe.is_public %}checked{% endif %}> Make Public
+            </label>
+        </div>
         <hr>
         <button type="submit">Save Changes</button>
         <a href="{{ url_for('index') }}">Cancel</a>
