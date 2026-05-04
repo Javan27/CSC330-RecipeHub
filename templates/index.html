@@ -22,7 +22,7 @@
             <a class="nav-link" href="/search">Search</a> | 
             <a class="nav-link" href="/logout">Logout</a>
             {% if is_admin %}
-                | <a class="admin-link" href="/admin">Admin Panel</a>
+                | <a class="admin-link" href="/admin" style="color: var(--orange); font-weight: bold;">Admin Panel</a>
             {% endif %}
         </p>
 
@@ -33,33 +33,26 @@
             <h3 class="section-title">Create New Recipe</h3>
 
             <div class="form-group">
-                <input class="form-input" type="text" id="new-recipe-name" placeholder="Recipe Name (Required)">
+                <label class="form-label">Recipe Name:</label>
+                <input class="form-input" type="text" id="new-recipe-name" placeholder="Enter name...">
             </div>
 
             <div class="form-group">
-                <label class="form-label">Servings:</label>
-                <input class="form-input" type="number" id="new-serving-size" placeholder="Servings" min="1" value="1">
+                <label class="form-label">Default Servings:</label>
+                <input class="form-input" type="number" id="new-serving-size" min="1" value="1">
             </div>
 
-            <div id="ingredient-container" class="ingredient-container">
+            <div id="ingredient-container">
                 <p class="section-label"><strong>Ingredients:</strong></p>
-
                 <div class="ingredient-row form-row">
-                    <input class="form-input ing-qty" type="text" placeholder="Qty" style="width: 70px;">
-
+                    <input class="form-input ing-qty" type="text" placeholder="Qty" style="width: 80px;">
                     <select class="form-select ing-unit" style="width: 120px;">
                         <option value="">Unit</option>
-                        <option value="tsp">Teaspoon</option>
-                        <option value="tbsp">Tablespoon</option>
-                        <option value="cup">Cup</option>
                         <option value="g">Grams</option>
                         <option value="oz">Ounces</option>
-                        <option value="ml">Milliliters</option>
-                        <option value="lb">Pounds</option>
-                        <option value="pinch">Pinch</option>
-                        <option value="piece">Piece</option>
+                        <option value="cup">Cup</option>
+                        <option value="ml">ml</option>
                     </select>
-
                     <input class="form-input ing-name" type="text" placeholder="Ingredient Name" style="flex: 1;">
                 </div>
             </div>
@@ -70,25 +63,25 @@
 
             <div class="form-group" style="margin-top: 20px;">
                 <label class="form-label">Instructions:</label>
-                <textarea class="form-textarea" id="new-instructions" placeholder="Enter cooking instructions here..."></textarea>
+                <textarea class="form-textarea" id="new-instructions" placeholder="Step-by-step guide..."></textarea>
             </div>
 
-            <div class="form-row" style="background: #fdfdfd; padding: 15px; border-radius: 14px; border: 1px solid #eee0d0; margin-bottom: 20px;">
+            <div class="form-row card" style="background: #fdfdfd; padding: 15px; border: 1px solid var(--border); margin-bottom: 20px;">
                 <div class="form-group">
                     <label class="form-label">Calories</label>
-                    <input class="form-input" type="number" id="new-calories" value="0" style="width: 80px;">
+                    <input class="form-input" type="number" id="new-calories" value="0" style="width: 85px;">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Protein (g)</label>
-                    <input class="form-input" type="number" id="new-protein" value="0" style="width: 80px;">
+                    <input class="form-input" type="number" id="new-protein" value="0" style="width: 85px;">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Carbs (g)</label>
-                    <input class="form-input" type="number" id="new-carbs" value="0" style="width: 80px;">
+                    <input class="form-input" type="number" id="new-carbs" value="0" style="width: 85px;">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Fat (g)</label>
-                    <input class="form-input" type="number" id="new-fat" value="0" style="width: 80px;">
+                    <input class="form-input" type="number" id="new-fat" value="0" style="width: 85px;">
                 </div>
             </div>
             
@@ -98,10 +91,8 @@
                     <select class="form-select" id="new-tags">
                         <option value="">No Tag</option>
                         <option value="keto">Keto</option>
-                        <option value="sugar-free">Sugar-Free</option>
-                        <option value="protein">Protein</option>
-                        <option value="nut-free">Nut-Free</option>
                         <option value="vegan">Vegan</option>
+                        <option value="protein">Protein</option>
                     </select>
                 </div>
 
@@ -111,7 +102,7 @@
                 </label>
             </div>
 
-            <button class="btn btn-primary" id="btn-create-recipe" style="width: 100%; margin-top: 10px;">
+            <button class="btn btn-primary" id="btn-create-recipe" style="width: 100%;">
                 Create Recipe
             </button>
 
@@ -130,9 +121,7 @@
     </div>
 
  <script>
-    window.APP_DATA = {
-        username: "{{ username }}"
-    };
+    window.APP_DATA = { username: "{{ username }}" };
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
