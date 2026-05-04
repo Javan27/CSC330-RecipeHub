@@ -34,6 +34,10 @@ class Recipe(db.Model):
     servings = db.Column(db.Integer, nullable=False)
     instructions = db.Column(db.Text, nullable=True)
     ingredients = db.relationship('Ingredient', backref='recipe', lazy=True, cascade="all, delete-orphan")
+    calories = db.Column(db.Integer, default=0, nullable=True)
+    protein = db.Column(db.Integer, default=0, nullable=True)
+    carbs = db.Column(db.Integer, default=0, nullable=True)
+    fat = db.Column(db.Integer, default=0, nullable=True)
     tags = db.Column(db.String(200), nullable=True)
     is_public = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -179,6 +183,10 @@ def get_recipes():
             'creator': r.owner.username,
             'avg_rating': avg_val, 
             'forked_from': r.forked_from, 
+            'calories': recipe.calories,
+            'protein': recipe.protein,
+            'carbs': recipe.carbs,
+            'fat': recipe.fat
         })
     return jsonify(output)
 
@@ -205,7 +213,11 @@ def create_recipe():
         instructions=data.get('instructions', ''), 
         tags=data.get('tags', ''),
         is_public=data.get('is_public', True),
-        user_id=session['user_id']
+        user_id=session['user_id'], 
+        calories=data.get('calories', 0),
+        protein=data.get('protein', 0),
+        carbs=data.get('carbs', 0),
+        fat=data.get('fat', 0)
     )
     
     db.session.add(new_recipe)
