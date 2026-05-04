@@ -2,59 +2,74 @@
 <html>
 <head>
     <title>Search Results</title>
+    <style>
+        .result-item { margin-bottom: 20px; padding: 15px; border-bottom: 1px solid #eee; }
+        .match-context { color: #27ae60; font-weight: bold; font-size: 0.9em; margin-top: 5px; }
+        .recipe-meta { color: #666; font-size: 0.9em; }
+    </style>
 </head>
 <body>
-    <h1>Search</h1>
+    <h1>Search Recipes</h1>
 
     <form action="/search" method="GET">
         <div>
             <label>Recipe Name:</label>
-            <input type="text" name="q_name" value="{{ q_name or '' }}">
+            <input type="text" name="q_name" value="{{ q_name or '' }}" placeholder="Search by name...">
         </div>
 
         <div>
             <label>Ingredients:</label>
-            <input type="text" name="q_ing" value="{{ q_ing or '' }}">
+            <input type="text" name="q_ing" value="{{ q_ing or '' }}" placeholder="Search by ingredient...">
         </div>
 
         <div>
             <label>Dietary Tag:</label>
             <select name="q_tag">
                 <option value="">Any Tag</option>
-                <option value="Vegan" {% if q_tag == 'Vegan' %}selected{% endif %}>Vegan</option>
-                <option value="Keto" {% if q_tag == 'Keto' %}selected{% endif %}>Keto</option>
-                <option value="Gluten-Free" {% if q_tag == 'Gluten-Free' %}selected{% endif %}>Gluten-Free</option>
-                <option value="Protein" {% if q_tag == 'Vegetarian' %}selected{% endif %}>Vegetarian</option>
+                <option value="keto" {% if q_tag == 'keto' %}selected{% endif %}>Keto</option>
+                <option value="sugar-free" {% if q_tag == 'sugar-free' %}selected{% endif %}>Sugar-Free</option>
+                <option value="vegan" {% if q_tag == 'vegan' %}selected{% endif %}>Vegan</option>
+                <option value="protein" {% if q_tag == 'protein' %}selected{% endif %}>Protein</option>
+                <option value="nut-free" {% if q_tag == 'nut-free' %}selected{% endif %}>Nut-Free</option>
             </select>
         </div>
 
-        <button type="submit">Search</button>
+        <button type="submit" style="margin-top: 10px; padding: 5px 15px;">Search</button>
     </form>
 
     <hr>
 
     {% if q_name or q_ing or q_tag %}
-        <h2>Results for: {{ q_name }} {{ q_ing }} {{ q_tag }}</h2>
+        <h2>Results:</h2>
         {% if results %}
-            <ul>
+            <div id="results-list">
                 {% for item in results %}
-                    <li>
-                        <a href="/recipe/{{ item.recipe.id }}">
-                            <strong>{{ item.recipe.name }}</strong>
-                        </a> 
-                        - Calories: {{ item.recipe.calories }}
+                    <div class="result-item">
+                        <a href="/recipe/{{ item.recipe.id }}" style="text-decoration: none;">
+                            <strong style="font-size: 1.2em; color: #2c3e50;">{{ item.recipe.name }}</strong>
+                        </a>
+                        <div class="recipe-meta">
+                            By: {{ item.recipe.owner.username }} | Calories: {{ item.recipe.calories }}
+                        </div>
+                        
                         {% if item.context %}
-                            - ({{ item.context }})
+                            <div class="match-context">{{ item.context }}</div>
                         {% endif %}
-                    </li>
+                        
+                        {% if item.recipe.tags %}
+                            <span style="background: #e1f5fe; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
+                                {{ item.recipe.tags }}
+                            </span>
+                        {% endif %}
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         {% else %}
-            <p>No recipes found.</p>
+            <p>No recipes found matching your criteria.</p>
         {% endif %}
     {% endif %}
 
     <br>
-    <a href="{{ url_for('index') }}">Back to Home</a>
+    <a href="{{ url_for('index') }}">Back to Dashboard</a>
 </body>
 </html>
