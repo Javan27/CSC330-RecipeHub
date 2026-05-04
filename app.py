@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 from sqlalchemy import or_, func
 import os
 
@@ -14,9 +15,22 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-#Database Models
+#Admin Decorator [Bug Fix: Admin branch integration]
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        user = User.query.get(session['user_id'])
+        if not user or not user.is_admin:
+            return "Forbidden", 403
+        return f(*args, **kwargs)
+    return decorated
+
+#Models
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    is_admin = db.Column(db.Boolean, default=False)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     recipes = db.relationship('Recipe', backref='owner', lazy=True)
@@ -34,17 +48,18 @@ class Recipe(db.Model):
     servings = db.Column(db.Integer, nullable=False)
     instructions = db.Column(db.Text, nullable=True)
     ingredients = db.relationship('Ingredient', backref='recipe', lazy=True, cascade="all, delete-orphan")
-    calories = db.Column(db.Integer, default=0, nullable=True)
-    protein = db.Column(db.Integer, default=0, nullable=True)
-    carbs = db.Column(db.Integer, default=0, nullable=True)
-    fat = db.Column(db.Integer, default=0, nullable=True)
+    #Restored from Main Branch
+    calories = db.Column(db.Integer, default=0)
+    protein = db.Column(db.Integer, default=0)
+    carbs = db.Column(db.Integer, default=0)
+    fat = db.Column(db.Integer, default=0)
     tags = db.Column(db.String(200), nullable=True)
     is_public = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     forked_from = db.Column(db.String(80), nullable=True)
     ratings = db.relationship('Rating', backref='recipe', lazy=True, cascade="all, delete-orphan")
     comments = db.relationship('Comment', backref='recipe', lazy=True, cascade="all, delete-orphan")
-    
+
 class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     stars = db.Column(db.Integer, nullable=False)
@@ -58,11 +73,33 @@ class Comment(db.Model):
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
     username = db.Column(db.String(80))
 
-#Auth Helpers
-def auth_error(message):
-    return f"<h3>{message}</h3><br><button onclick='window.history.back()'>Go Back</button>"
+#Admin Routes
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    users = User.query.order_by(User.username).all()
+    public_recipes = Recipe.query.filter_by(is_public=True).order_by(Recipe.id.desc()).all()
+    return render_template('admin.html', users=users, recipes=public_recipes)
 
-#Page Routes
+@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@admin_required
+def admin_delete_user(user_id):
+    if user_id == session['user_id']:
+        return jsonify({'error': 'Cannot delete yourself'}), 400
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/delete_recipe/<int:recipe_id>', methods=['POST'])
+@admin_required
+def admin_delete_recipe(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
+    db.session.delete(recipe)
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+#Main Routes
 @app.route('/feed')
 def feed():
     if 'user_id' not in session:
@@ -70,20 +107,14 @@ def feed():
     
     sort_by = request.args.get('sort', 'newest')
     tag_filter = request.args.get('tag', '')
-
-    #Base query for public recipes
     query = Recipe.query.filter_by(is_public=True)
 
-    #[Feature: Global Feed Tag Filter]
     if tag_filter:
         query = query.filter(Recipe.tags == tag_filter)
 
-    #[Feature: Global Feed Sorting Logic]
     if sort_by == 'highest_rated':
-        #Join with ratings and sort by the average of stars
         query = query.outerjoin(Rating).group_by(Recipe.id).order_by(func.avg(Rating.stars).desc())
     else:
-        #Default to newest
         query = query.order_by(Recipe.id.desc())
 
     recipes = query.all()
@@ -93,20 +124,19 @@ def feed():
 def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html', username=session.get('username'))
+    user = User.query.get(session['user_id'])
+    return render_template('index.html', username=session.get('username'), is_admin=user.is_admin)
 
 @app.route('/recipe/<int:recipe_id>')
 def recipe_detail(recipe_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
     recipe = Recipe.query.get_or_404(recipe_id)
     ratings = Rating.query.filter_by(recipe_id=recipe_id).all()
     avg_val = round(sum([r.stars for r in ratings]) / len(ratings), 1) if ratings else "Not yet rated"
     user_rating = Rating.query.filter_by(recipe_id=recipe_id, user_id=session['user_id']).first()
     user_stars = user_rating.stars if user_rating else None
     is_owner = (recipe.user_id == session['user_id'])
-    
     return render_template('recipe_detail.html', recipe=recipe, avg_rating=avg_val, user_stars=user_stars, is_owner=is_owner)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -119,7 +149,7 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             return redirect(url_for('index'))
-        return auth_error("Invalid username or password.")
+        return "Invalid login", 401
     return render_template('login.html')
 
 @app.route('/create_account', methods=['GET', 'POST'])
@@ -129,9 +159,9 @@ def create_account():
         password = request.form['password']
         confirm = request.form['confirm_password']
         if password != confirm:
-            return auth_error("Passwords do not match.")
+            return "Passwords do not match", 400
         if User.query.filter_by(username=username).first():
-            return auth_error("Username already exists.")
+            return "Username already exists", 400
         new_user = User(username=username, password=generate_password_hash(password))
         db.session.add(new_user)
         db.session.commit()
@@ -145,41 +175,27 @@ def logout():
 
 @app.route('/search')
 def search():
-    q_name = request.args.get('q_name', '').strip()
-    q_ing = request.args.get('q_ing', '').strip()
-    q_tag = request.args.get('q_tag', '').strip()
-    
-    query_obj = Recipe.query.outerjoin(Ingredient).filter(
-        (Recipe.is_public == True) | (Recipe.user_id == session.get('user_id'))
-    )
-
-    active_filters = []
-    if q_name: active_filters.append(Recipe.name.ilike(f'%{q_name}%'))
-    if q_ing: active_filters.append(Ingredient.name.ilike(f'%{q_ing}%'))
-    if q_tag: active_filters.append(Recipe.tags.ilike(f'%{q_tag}%'))
-
-    if active_filters:
-        query_obj = query_obj.filter(or_(*active_filters))
-    else:
-        return render_template('search_results.html', results=[], q_name=q_name, q_ing=q_ing, q_tag=q_tag)
-
-    results = query_obj.distinct().all()
+    query = request.args.get('q', '').strip()
     results_data = []
-    for r in results:
-        context = None
-        if q_ing:
-            match = next((i.name for i in r.ingredients if q_ing.lower() in i.name.lower()), None)
-            if match: context = f"Has ingredient: {match}"
-        
-        results_data.append({'recipe': r, 'context': context})
+    if query:
+        results = Recipe.query.outerjoin(Ingredient).filter(
+            ((Recipe.name.contains(query)) |
+             (Ingredient.name.contains(query)) |
+             (Recipe.tags.contains(query))) &
+            ((Recipe.is_public == True) | (Recipe.user_id == session.get('user_id')))
+        ).distinct().all()
 
-    return render_template('search_results.html', results=results_data, q_name=q_name, q_ing=q_ing, q_tag=q_tag)
+        for r in results:
+            matched_ingredient = next((ing.name for ing in r.ingredients if query.lower() in ing.name.lower()), None)
+            match_context = f"Has ingredient: {matched_ingredient}" if matched_ingredient else None
+            results_data.append({'recipe': r, 'context': match_context})
+            
+    return render_template('search_results.html', results=results_data, query=query)
 
 #API Routes
 @app.route('/api/recipes', methods=['GET'])
 def get_recipes():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     my_recipes = Recipe.query.filter_by(user_id=session['user_id']).all()
     output = []
     for r in my_recipes:
@@ -187,7 +203,7 @@ def get_recipes():
         avg_val = round(sum([rt.stars for rt in ratings]) / len(ratings), 1) if ratings else "Not yet rated"
         output.append({
             'id': r.id, 'name': r.name, 'servings': r.servings, 'tags': r.tags, 
-            'creator': r.owner.username, 'avg_rating': avg_val, 'forked_from': r.forked_from, 
+            'creator': r.owner.username, 'avg_rating': avg_val, 'forked_from': r.forked_from,
             'calories': r.calories, 'protein': r.protein, 'carbs': r.carbs, 'fat': r.fat
         })
     return jsonify(output)
@@ -199,7 +215,6 @@ def create_recipe():
     if not data.get('name') or not data['name'].strip():
         return jsonify({'error': 'Recipe name cannot be blank'}), 400
 
-    #[Bug Fix: Servings Defaulting Logic]
     try:
         servings = int(data.get('servings', 1))
         if servings < 1: servings = 1
@@ -230,35 +245,6 @@ def delete_recipe(recipe_id):
         db.session.delete(recipe); db.session.commit()
         return jsonify({'message': 'Deleted'}), 200
     return jsonify({'error': 'Unauthorized'}), 404
-
-@app.route('/edit_recipe/<int:recipe_id>', methods=['GET', 'POST'])
-def edit_recipe(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
-    if 'user_id' not in session or recipe.user_id != session['user_id']:
-        return "Unauthorized", 403
-
-    if request.method == 'POST':
-        recipe.name = request.form.get('name')
-        recipe.instructions = request.form.get('instructions')
-        recipe.servings = int(request.form.get('servings', 1))
-        recipe.tags = request.form.get('tags')
-        recipe.is_public = 'is_public' in request.form
-        recipe.calories = int(request.form.get('calories', 0))
-        recipe.protein = int(request.form.get('protein', 0))
-        recipe.carbs = int(request.form.get('carbs', 0))
-        recipe.fat = int(request.form.get('fat', 0))
-
-        Ingredient.query.filter_by(recipe_id=recipe.id).delete()
-        names = request.form.getlist('ing_name')
-        qtys = request.form.getlist('ing_qty')
-        units = request.form.getlist('ing_unit')
-
-        for i in range(len(names)):
-            if names[i].strip():
-                db.session.add(Ingredient(quantity=qtys[i], unit=units[i], name=names[i].strip(), recipe_id=recipe.id))
-        db.session.commit()
-        return redirect(url_for('index'))
-    return render_template('edit_recipe.html', recipe=recipe)
 
 @app.route('/api/recipes/<int:recipe_id>/rate', methods=['POST'])
 def rate_recipe(recipe_id):
