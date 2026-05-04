@@ -17,7 +17,7 @@
         </p>
 
         {% if recipe.forked_from %}
-            <p class="recipe-meta" style="background: #e8f4f8; padding: 10px; border-radius: 12px; display: inline-block;">
+            <p class="recipe-meta" style="background: #e8f4f8; padding: 10px; border-radius: 12px; display: inline-block; color: #2c3e50;">
                 🍴 <em>Forked from: <strong>{{ recipe.forked_from }}</strong></em>
             </p>
         {% endif %}
@@ -37,10 +37,13 @@
                 <label class="form-label"><strong>Unit Conversion:</strong></label>
                 <select class="form-select" id="unit-toggle">
                     <option value="default">Original Units</option>
+                    <option value="tsp">Teaspoon</option>
+                    <option value="tbsp">Tablespoon</option>
+                    <option value="cup">Cup</option>
                     <option value="g">Grams (g)</option>
                     <option value="oz">Ounces (oz)</option>
                     <option value="ml">Milliliters (ml)</option>
-                    <option value="cup">Cups</option>
+                    <option value="lb">Pounds (lb)</option>
                 </select>
             </div>
         </div>
@@ -85,6 +88,7 @@
 
         <div class="action-buttons" style="display: flex; gap: 10px; margin-bottom: 30px;">
             {% if is_owner %}
+                <a href="/edit_recipe/{{ recipe.id }}" class="btn btn-primary" style="text-decoration: none;">Edit Recipe</a>
                 <button class="btn btn-danger" onclick="deleteRecipe()">Delete Recipe</button>
             {% else %}
                 <button class="btn btn-success" onclick="fork_recipe()">Fork Recipe</button>
