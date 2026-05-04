@@ -3,30 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <title>Login Page</title>
+    <style>
+        .auth-container { max-width: 300px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .form-group { margin-bottom: 15px; }
+        .btn { padding: 8px 15px; cursor: pointer; }
+    </style>
 </head>
 <body>
+    <div class="auth-container">
+        <h2>Login</h2>
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label>Username</label><br>
+                <input type="text" name="username" style="width: 100%;" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label><br>
+                <input type="password" name="password" style="width: 100%;" required>
+            </div>
 
-    <h2>Login</h2>
-    <form action="/login" method="POST">
-        <div>
-            <label>Username</label>
-            <input type="text" name="username" required>
-        </div>
-        
-        <div>
-            <label>Password</label>
-            <input type="password" name="password" required>
-        </div>
+            <button type="submit" class="btn" style="background-color: #4CAF50; color: white; border: none;">Submit</button>
+            <button type="button" class="btn" onclick="window.history.back()">Go Back</button>
+        </form>
 
-        <button type="submit">Submit</button>
-    </form>
-
-    <hr>
-    
-    <p>Don't have an account?</p>
-    <a href="/create_account">
-        <button type="button">Create an Account</button>
-    </a>
-
+        <hr>
+        <p>Don't have an account?</p>
+        <a href="/create_account">
+            <button type="button" class="btn">Create an Account</button>
+        </a>
+    </div>
 </body>
 </html>
