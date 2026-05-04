@@ -20,7 +20,21 @@
         <option value="cup">Cups</option>
     </select>
 </p>
-
+<div class="recipe-macros-detail" style="margin-top: 15px; padding: 10px; background: #f4f4f4; border-radius: 5px; display: inline-block;">
+    <strong>Nutrition (Per Recipe):</strong>
+    <span style="margin-left: 10px;">
+        Calories: <span id="display-calories" data-original="{{ recipe.calories }}">{{ recipe.calories }}</span>
+    </span> |
+    <span>
+        Protein: <span id="display-protein" data-original="{{ recipe.protein }}">{{ recipe.protein }}</span>g
+    </span> |
+    <span>
+        Carbs: <span id="display-carbs" data-original="{{ recipe.carbs }}">{{ recipe.carbs }}</span>g
+    </span> |
+    <span>
+        Fat: <span id="display-fat" data-original="{{ recipe.fat }}">{{ recipe.fat }}</span>g
+    </span>
+</div>
 <p><strong>Ingredients:</strong></p>
 <ul>
     {% for ing in recipe.ingredients %}
@@ -131,6 +145,14 @@
     const originalServings = parseFloat(servingInput.dataset.originalServings);
     const targetUnit = document.getElementById('unit-toggle').value;
     const ratio = newServings / originalServings;
+
+	const macroFields = ['calories', 'protein', 'carbs', 'fat'];
+    macroFields.forEach(macro => {
+        const el = document.getElementById(`display-${macro}`);
+        if (el) {
+            const originalVal = parseFloat(el.dataset.original) || 0;
+            el.textContent = Math.round(originalVal * ratio);
+        }
 
     document.querySelectorAll('.ingredient-row').forEach(row => {
         const qtySpan = row.querySelector('.qty');
