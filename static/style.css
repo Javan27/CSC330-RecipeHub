@@ -1,1 +1,274 @@
-demo
+:root {
+    --orange: #ff9f1c;
+    --dark: #1f1f1f;
+    --text: #2b2b2b;
+    --muted: #777;
+    --bg: #f7f3ed;
+    --card: #ffffff;
+    --border: #eee0d0;
+}
+
+body,
+.page-body {
+    font-family: Arial, sans-serif;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Layout */
+
+.container,
+.feed-container,
+.dashboard-container,
+.recipe-container,
+.search-container,
+.form-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.card,
+.recipe-card,
+.form-card,
+.search-result-item,
+.form-container {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+}
+
+.page-title,
+.form-title {
+    font-size: 42px;
+    line-height: 1;
+    margin-bottom: 16px;
+    color: var(--dark);
+}
+
+.section-title {
+    font-size: 26px;
+    margin-top: 30px;
+    margin-bottom: 16px;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+}
+
+/* Nav */
+
+.nav-bar {
+    background: white;
+    padding: 14px 18px;
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+    margin-bottom: 28px;
+}
+
+.nav-link,
+.recipe-link,
+.back-link {
+    color: var(--dark);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.nav-link:hover,
+.recipe-link:hover {
+    color: var(--orange);
+}
+
+/* Forms */
+
+.form-input,
+.form-select,
+.form-textarea,
+input,
+select,
+textarea {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 14px;
+    background: white;
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-label,
+.section-label {
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-row,
+.ingredient-row,
+.comment-input-row,
+.search-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.form-textarea,
+textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+/* Buttons */
+
+.btn,
+button {
+    border: none;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--orange);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #e88d10;
+}
+
+.btn-secondary {
+    background: #222;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #000;
+}
+
+.btn-success {
+    background: #2ecc71;
+    color: white;
+}
+
+.btn-danger,
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+}
+
+/* Recipe Grids */
+
+#recipe-grid,
+.grid,
+#original-recipes-grid,
+#forked-recipes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+}
+
+.recipe-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recipe-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.1);
+}
+
+.recipe-title {
+    font-size: 24px;
+    margin-top: 0;
+}
+
+.recipe-meta,
+.result-meta,
+.text-muted,
+.empty-state {
+    color: var(--muted);
+}
+
+.ingredient-list {
+    padding-left: 20px;
+}
+
+/* Search */
+
+.search-input {
+    flex: 1;
+    min-width: 220px;
+}
+
+.search-results-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.result-context {
+    color: var(--orange);
+    font-weight: 600;
+}
+
+/* Comments */
+
+.comment {
+    background: #fff7ec;
+    border-radius: 16px;
+    padding: 12px 14px;
+}
+
+/* Tables */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+th,
+td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: #fff3dd;
+}
+
+/* Admin */
+
+.badge-admin {
+    background: var(--orange);
+    color: white;
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 999px;
+}
+
+.admin-link {
+    color: var(--orange);
+    font-weight: bold;
+}
+
+.hidden {
+    display: none;
+}
