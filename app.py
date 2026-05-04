@@ -137,43 +137,38 @@ def logout():
 
 
 @app.route('/search')
+@app.route('/search')
 def search():
-    # Three separate boxes
     q_name = request.args.get('q_name', '').strip()
     q_ing = request.args.get('q_ing', '').strip()
     q_tag = request.args.get('q_tag', '').strip()
     
+    query_obj = Recipe.query.outerjoin(Ingredient).filter(
+        (Recipe.is_public == True) | (Recipe.user_id == session.get('user_id'))
+    )
+
+    active_filters = []
+    if q_name:
+        active_filters.append(Recipe.name.ilike(f'%{q_name}%'))
+    if q_ing:
+        active_filters.append(Ingredient.name.ilike(f'%{q_ing}%'))
+    if q_tag:
+        active_filters.append(Recipe.tags.ilike(f'%{q_tag}%'))
+
+    if active_filters:
+        query_obj = query_obj.filter(or_(*active_filters))
+    else:
+
+            return render_template('search_results.html', results=[], q_name=q_name, q_ing=q_ing, q_tag=q_tag)
+
+    results = query_obj.distinct().all()
+    
     results_data = []
-
-    # Only search if at least one box has text
-    if q_name or q_ing or q_tag:
-        query_filters = []
-
-        # Box 1: Name
-        if q_name:
-            query_filters.append(Recipe.name.ilike(f'%{q_name}%'))
-        
-        # Box 2: Ingredient (requires Join)
-        if q_ing:
-            query_filters.append(Ingredient.name.ilike(f'%{q_ing}%'))
-        
-        # Box 3: Tags
-        if q_tag:
-            query_filters.append(Recipe.tags.ilike(f'%{q_tag}%'))
-
-        # Privacy logic: Always required
-        privacy_filter = ((Recipe.is_public == True) | (Recipe.user_id == session.get('user_id')))
-
-        # Combine all active boxes using OR so we find matches in any category
-        results = Recipe.query.outerjoin(Ingredient).filter(
-            or_(*query_filters) & privacy_filter
-        ).distinct().all()
-
-        for r in results:
-            results_data.append({
-                'recipe': r,
-                'calories': r.calories
-            })
+    for r in results:
+        results_data.append({
+            'recipe': r,
+            'calories': r.calories
+        })
 
     return render_template('search_results.html', 
                            results=results_data, 
