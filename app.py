@@ -137,7 +137,6 @@ def logout():
 
 
 @app.route('/search')
-@app.route('/search')
 def search():
     q_name = request.args.get('q_name', '').strip()
     q_ing = request.args.get('q_ing', '').strip()
@@ -198,10 +197,10 @@ def get_recipes():
             'creator': r.owner.username,
             'avg_rating': avg_val, 
             'forked_from': r.forked_from, 
-            'calories': recipe.calories,
-            'protein': recipe.protein,
-            'carbs': recipe.carbs,
-            'fat': recipe.fat
+            'calories': r.calories,
+            'protein': r.protein,
+            'carbs': r.carbs,
+            'fat': r.fat
         })
     return jsonify(output)
 
