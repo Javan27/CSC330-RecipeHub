@@ -110,4 +110,11 @@
 
     </div>
 
-<script>
+ <script>
+    window.APP_DATA = {
+        username: "{{ username }}"
+    };
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

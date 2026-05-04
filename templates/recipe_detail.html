@@ -5,7 +5,7 @@
     <title>{{ recipe.name }} Details</title>
 </head>
 
-<body class="page-body">
+<body class="page-body" data-recipe-id="{{ recipe.id }}">
 
     <div class="container recipe-container">
 
@@ -132,3 +132,5 @@
         </a>
 
     </div>
+        <script src="{{ url_for('static', filename='js/recipe-detail.js') }}"></script>
+    </body>
