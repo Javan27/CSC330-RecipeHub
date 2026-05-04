@@ -3,44 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Recipe Feed</title>
+    <title>Public Recipe Feed</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .feed-container { max-width: 1000px; margin: 0 auto; font-family: sans-serif; padding: 20px; }
-        .toolbar { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; border: 1px solid #ddd; }
-        .recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .recipe-card { border: 1px solid #eee; padding: 20px; border-radius: 12px; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; position: relative; display: flex; flex-direction: column; }
-        .recipe-card:hover { transform: translateY(-5px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
-        .tag-badge { background: #e1f5fe; color: #0277bd; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; }
-        .rating-badge { color: #f1c40f; font-weight: bold; }
-        .sort-btn { padding: 8px 15px; border: 1px solid #ccc; border-radius: 5px; background: white; cursor: pointer; text-decoration: none; color: black; font-size: 0.9em; }
-        .sort-btn.active { background: #4CAF50; color: white; border-color: #4CAF50; }
-        .creator-info { font-size: 0.85em; color: #666; margin-bottom: 5px; }
-        .fork-label { color: #7f8c8d; font-style: italic; font-size: 0.85em; margin: 0 0 10px 0; }
-        .original-label { color: #27ae60; font-size: 0.85em; font-weight: bold; margin: 0 0 10px 0; }
+        .toolbar { margin-bottom: 24px; display: flex; gap: 16px; align-items: center; }
+        .active-sort { background: var(--orange) !important; color: white !important; }
+        .fork-label { font-size: 13px; color: var(--muted); font-style: italic; margin-top: -10px; margin-bottom: 10px; display: block; }
+        .rating-stars { color: #f1c40f; font-weight: bold; }
     </style>
 </head>
-<body>
-    <div class="feed-container">
-        <p>
-            Logged in as: <strong>{{ username }}</strong> | 
-            <a href="/">My Dashboard</a> | 
-            <a href="/search">Search</a> | 
-            <a href="/logout">Logout</a>
+<body class="page-body">
+
+    <div class="feed-container container">
+
+        <p class="nav-bar">
+            Logged in as: <strong class="username">{{ username }}</strong> | 
+            <a class="nav-link" href="/">My Dashboard</a> | 
+            <a class="nav-link" href="/search">Search</a> | 
+            <a class="nav-link" href="/logout">Logout</a>
         </p>
 
-        <h1>Global Discovery Feed</h1>
+        <h1 class="page-title">Global Discovery Feed</h1>
 
-        <div class="toolbar">
+        <div class="toolbar card">
             <div>
-                <strong>Sort By:</strong>
-                <a href="/feed?sort=newest&tag={{ current_tag }}" class="sort-btn {{ 'active' if current_sort == 'newest' }}">Newest</a>
-                <a href="/feed?sort=highest_rated&tag={{ current_tag }}" class="sort-btn {{ 'active' if current_sort == 'highest_rated' }}">Highest Rated</a>
+                <span class="section-label">Sort By:</span>
+                <a href="/feed?sort=newest&tag={{ current_tag }}" 
+                   class="btn btn-secondary {{ 'active-sort' if current_sort == 'newest' }}">Newest</a>
+                <a href="/feed?sort=highest_rated&tag={{ current_tag }}" 
+                   class="btn btn-secondary {{ 'active-sort' if current_sort == 'highest_rated' }}">Highest Rated</a>
             </div>
 
             <div style="margin-left: auto;">
-                <strong>Filter Tag:</strong>
-                <select onchange="location = this.value;" style="padding: 5px; border-radius: 5px;">
-                    <option value="/feed?sort={{ current_sort }}">All Recipes</option>
+                <span class="section-label">Filter Tag:</span>
+                <select class="form-select" onchange="location = this.value;">
+                    <option value="/feed?sort={{ current_sort }}">All Categories</option>
                     {% for tag in ['keto', 'sugar-free', 'protein', 'nut-free', 'vegan'] %}
                         <option value="/feed?sort={{ current_sort }}&tag={{ tag }}" {{ 'selected' if current_tag == tag }}>
                             {{ tag|capitalize }}
@@ -50,51 +47,53 @@
             </div>
         </div>
 
-        <hr>
+        <hr class="divider">
 
         {% if recipes %}
-            <div class="recipe-grid">
+            <div id="recipe-grid" class="grid">
                 {% for recipe in recipes %}
-                    <div class="recipe-card">
-                        <div class="creator-info">Shared by: @{{ recipe.owner.username }}</div>
-                        <h2 style="margin: 0 0 5px 0;">
-                            <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: #2c3e50;">{{ recipe.name }}</a>
+                    <div class="recipe-card card">
+                        <h2 class="recipe-title">
+                            <a class="recipe-link" href="/recipe/{{ recipe.id }}">
+                                {{ recipe.name }}
+                            </a>
                         </h2>
-                        
+
                         {% if recipe.forked_from %}
-                            <p class="fork-label">Forked from: {{ recipe.forked_from }}</p>
-                        {% else %}
-                            <p class="original-label">Original Recipe</p>
+                            <span class="fork-label">Forked from: {{ recipe.forked_from }}</span>
                         {% endif %}
 
-                        <div style="margin-bottom: 15px;">
+                        <p class="recipe-author">
+                            <em>By: <span class="author-name">{{ recipe.owner.username }}</span></em>
+                        </p>
+
+                        <div class="recipe-meta" style="margin-bottom: 12px;">
                             {% if recipe.tags %}
-                                <span class="tag-badge">{{ recipe.tags|capitalize }}</span>
+                                <span class="badge-admin" style="background: var(--dark);">{{ recipe.tags|capitalize }}</span>
                             {% endif %}
-                            <span style="margin-left: 10px; font-size: 0.9em; color: #888;">{{ recipe.calories }} Cal</span>
+                            <span style="margin-left: 8px;">{{ recipe.calories or 0 }} Cal</span>
                         </div>
 
-                        <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
-                            <span class="rating-badge">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                            <span class="rating-stars">
                                 {% if recipe.ratings %}
                                     ⭐ {{ (recipe.ratings|sum(attribute='stars') / recipe.ratings|length)|round(1) }}
                                 {% else %}
-                                    <span style="color: #ccc; font-weight: normal;">No ratings</span>
+                                    <span style="color: var(--muted); font-weight: normal; font-size: 0.9em;">Unrated</span>
                                 {% endif %}
                             </span>
-                            <a href="/recipe/{{ recipe.id }}" style="text-decoration: none;">
-                                <button style="background: #fdfdfd; border: 1px solid #ddd; padding: 5px 12px; border-radius: 5px; cursor: pointer;">View Recipe</button>
+                            
+                            <a href="/recipe/{{ recipe.id }}">
+                                <button class="btn btn-primary">View</button>
                             </a>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <div style="text-align: center; margin-top: 50px;">
-                <h3>No recipes found.</h3>
-                <p>Try changing your filters or be the first to post a new recipe!</p>
-            </div>
+            <p class="empty-state">No recipes found matching these filters.</p>
         {% endif %}
+
     </div>
 </body>
 </html>
