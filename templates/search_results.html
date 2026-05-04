@@ -1,75 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Search Results</title>
-    <style>
-        .result-item { margin-bottom: 20px; padding: 15px; border-bottom: 1px solid #eee; }
-        .match-context { color: #27ae60; font-weight: bold; font-size: 0.9em; margin-top: 5px; }
-        .recipe-meta { color: #666; font-size: 0.9em; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <h1>Search Recipes</h1>
 
-    <form action="/search" method="GET">
-        <div>
-            <label>Recipe Name:</label>
-            <input type="text" name="q_name" value="{{ q_name or '' }}" placeholder="Search by name...">
+<body class="page-body">
+
+    <div class="container search-container">
+
+        <h1 class="page-title">Search Recipes</h1>
+
+        <div class="card form-card">
+            <form action="/search" method="GET" class="search-form">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label class="form-label">Recipe Name:</label>
+                    <input class="form-input" type="text" name="q_name" value="{{ q_name or '' }}" placeholder="e.g. Pasta">
+                </div>
+
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label class="form-label">Ingredient:</label>
+                    <input class="form-input" type="text" name="q_ing" value="{{ q_ing or '' }}" placeholder="e.g. Garlic">
+                </div>
+
+                <div class="form-group" style="flex: 1; min-width: 150px;">
+                    <label class="form-label">Dietary Tag:</label>
+                    <select class="form-select" name="q_tag" style="width: 100%;">
+                        <option value="">Any Tag</option>
+                        {% for tag in ['keto', 'sugar-free', 'protein', 'nut-free', 'vegan'] %}
+                            <option value="{{ tag }}" {% if q_tag == tag %}selected{% endif %}>{{ tag|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button class="btn btn-primary" type="submit" style="align-self: flex-end; margin-bottom: 15px;">
+                    Search
+                </button>
+            </form>
         </div>
 
-        <div>
-            <label>Ingredients:</label>
-            <input type="text" name="q_ing" value="{{ q_ing or '' }}" placeholder="Search by ingredient...">
-        </div>
+        <hr class="divider">
 
-        <div>
-            <label>Dietary Tag:</label>
-            <select name="q_tag">
-                <option value="">Any Tag</option>
-                <option value="keto" {% if q_tag == 'keto' %}selected{% endif %}>Keto</option>
-                <option value="sugar-free" {% if q_tag == 'sugar-free' %}selected{% endif %}>Sugar-Free</option>
-                <option value="vegan" {% if q_tag == 'vegan' %}selected{% endif %}>Vegan</option>
-                <option value="protein" {% if q_tag == 'protein' %}selected{% endif %}>Protein</option>
-                <option value="nut-free" {% if q_tag == 'nut-free' %}selected{% endif %}>Nut-Free</option>
-            </select>
-        </div>
+        {% if q_name or q_ing or q_tag %}
+            <h2 class="section-title">Results:</h2>
 
-        <button type="submit" style="margin-top: 10px; padding: 5px 15px;">Search</button>
-    </form>
-
-    <hr>
-
-    {% if q_name or q_ing or q_tag %}
-        <h2>Results:</h2>
-        {% if results %}
-            <div id="results-list">
-                {% for item in results %}
-                    <div class="result-item">
-                        <a href="/recipe/{{ item.recipe.id }}" style="text-decoration: none;">
-                            <strong style="font-size: 1.2em; color: #2c3e50;">{{ item.recipe.name }}</strong>
-                        </a>
-                        <div class="recipe-meta">
-                            By: {{ item.recipe.owner.username }} | Calories: {{ item.recipe.calories }}
-                        </div>
-                        
-                        {% if item.context %}
-                            <div class="match-context">{{ item.context }}</div>
-                        {% endif %}
-                        
-                        {% if item.recipe.tags %}
-                            <span style="background: #e1f5fe; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">
-                                {{ item.recipe.tags }}
-                            </span>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p>No recipes found matching your criteria.</p>
+            {% if results %}
+                <ul class="search-results-list" style="list-style: none; padding: 0;">
+                    {% for item in results %}
+                        <li class="search-result-item card" style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <h3 style="margin: 0;">
+                                        <a class="recipe-link" href="/recipe/{{ item.recipe.id }}">
+                                            {{ item.recipe.name }}
+                                        </a>
+                                    </h3>
+                                    <p class="result-meta" style="margin: 5px 0;">
+                                        By: <span class="author-name">{{ item.recipe.owner.username }}</span> | 
+                                        Calories: {{ item.recipe.calories or 0 }}
+                                    </p>
+                                    
+                                    {% if item.context %}
+                                        <p class="result-context" style="margin: 5px 0; font-weight: bold; color: var(--orange);">
+                                            {{ item.context }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if item.recipe.tags %}
+                                    <span class="badge-admin" style="background: var(--dark);">{{ item.recipe.tags }}</span>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-state">No recipes found matching your criteria.</p>
+            {% endif %}
         {% endif %}
-    {% endif %}
 
-    <br>
-    <a href="{{ url_for('index') }}">Back to Dashboard</a>
+        <br>
+        <a class="nav-link back-link" href="{{ url_for('index') }}">
+            ← Back to Dashboard
+        </a>
+
+    </div>
+
 </body>
 </html>
