@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import or_
 import os
+
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_for_networking_lab'
