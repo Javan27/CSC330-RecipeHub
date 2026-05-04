@@ -1,185 +1,142 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>{{ recipe.name }} Details</title>
-    <style>
-        body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .scaled-value { font-weight: bold; color: #2c3e50; transition: color 0.3s; }
-        .highlight { color: #e67e22; transform: scale(1.1); display: inline-block; }
-        .macro-box { margin-top: 15px; padding: 15px; background: #f4f4f4; border-radius: 8px; border-left: 5px solid #4CAF50; }
-        .fork-banner { background: #e8f4f8; padding: 10px; border-radius: 5px; border-left: 5px solid #2980b9; margin: 10px 0; }
-        .btn-fork { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-delete { color: white; background: #e74c3c; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
-    </style>
 </head>
-<body>
-    <h1>{{ recipe.name }}</h1>
-    <p><strong>Created by:</strong> {{ recipe.owner.username }}</p>
 
-    {% if recipe.forked_from %}
-        <div class="fork-banner">
-            🍴 <em>This recipe was forked from <strong>{{ recipe.forked_from }}</strong>.</em>
-        </div>
-    {% endif %}
+<body class="page-body" data-recipe-id="{{ recipe.id }}">
 
-    <p><strong>Tags:</strong> {{ recipe.tags|capitalize if recipe.tags else "None" }}</p>
-    
-    <div style="background: #fff3e0; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <strong>Adjust Servings:</strong> 
-        <input type="number" id="serving-size" value="{{ recipe.servings }}" min="1" data-original-servings="{{ recipe.servings }}" style="width: 60px; padding: 5px;">
-        
-        <strong style="margin-left:20px;">Unit Conversion:</strong>
-        <select id="unit-toggle" style="padding: 5px;">
-            <option value="default">Original Units</option>
-            <option value="g">Grams (g)</option>
-            <option value="oz">Ounces (oz)</option>
-            <option value="ml">Milliliters (ml)</option>
-            <option value="cup">Cups</option>
-        </select>
-    </div>
+    <div class="container recipe-container">
 
-    <div class="macro-box">
-        <strong>Nutrition (Scaled):</strong><br>
-        Calories: <span id="display-calories" class="scaled-value" data-original="{{ recipe.calories }}">{{ recipe.calories }}</span> |
-        Protein: <span id="display-protein" class="scaled-value" data-original="{{ recipe.protein }}">{{ recipe.protein }}</span>g |
-        Carbs: <span id="display-carbs" class="scaled-value" data-original="{{ recipe.carbs }}">{{ recipe.carbs }}</span>g |
-        Fat: <span id="display-fat" class="scaled-value" data-original="{{ recipe.fat }}">{{ recipe.fat }}</span>g
-    </div>
+        <h1 class="page-title recipe-title">{{ recipe.name }}</h1>
 
-    <h3>Ingredients</h3>
-    <ul id="ingredient-list">
-        {% for ing in recipe.ingredients %}
-            <li class="ingredient-row" data-base-unit="{{ ing.unit }}">
-                <span class="qty scaled-value" data-original-qty="{{ ing.quantity }}">{{ ing.quantity }}</span> 
-                <span class="unit">{{ ing.unit }}</span> 
-                {{ ing.name }}
-            </li>
-        {% endfor %}
-        {% if not recipe.ingredients %}<li>None listed</li>{% endif %}
-    </ul>
+        <p class="recipe-meta">
+            <strong>Created by:</strong> 
+            <span class="author-name">{{ recipe.owner.username }}</span>
+        </p>
 
-    <h3>Instructions</h3>
-    <p style="white-space: pre-wrap; background: #fafafa; padding: 15px; border: 1px solid #eee; border-radius: 5px;">{{ recipe.instructions if recipe.instructions else "No instructions provided." }}</p>
-    
-    <p><strong>Community Rating:</strong> {% if avg_rating == "Not yet rated" %}{{ avg_rating }}{% else %}{{ avg_rating }} ⭐{% endif %}</p>
-
-    <div style="margin: 20px 0;">
-        {% if is_owner %}
-            <a href="/edit_recipe/{{ recipe.id }}"><button style="padding: 10px;">Edit Recipe</button></a>
-            <button onclick="deleteRecipe()" class="btn-delete">Delete Recipe</button>
-        {% else %}
-            <button onclick="fork_recipe()" class="btn-fork">Fork This Recipe</button>
+        {% if recipe.forked_from %}
+            <p class="recipe-meta" style="background: #e8f4f8; padding: 10px; border-radius: 12px; display: inline-block;">
+                🍴 <em>Forked from: <strong>{{ recipe.forked_from }}</strong></em>
+            </p>
         {% endif %}
-    </div>
 
-    <hr>
-    
-    {% if not is_owner %}
-        <div id="rating-display" {% if not user_stars %}style="display:none;"{% endif %}>
-            <p>Your rating: <strong>{{ user_stars }} Stars</strong></p>
-            <button onclick="toggleEdit()">Change Rating</button>
-        </div>
-        <div id="rating-form" {% if user_stars %}style="display:none;"{% endif %}>
-            <h3>Rate this Recipe</h3>
-            <select id="stars-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select>
-            <button onclick="submitRating()">Submit</button>
-            {% if user_stars %}<button onclick="toggleEdit()">Cancel</button>{% endif %}
-        </div>
-        <hr>
-    {% endif %}
+        <p class="recipe-meta">
+            <strong>Tags:</strong> 
+            <span class="tags">{{ recipe.tags|capitalize if recipe.tags else "None" }}</span>
+        </p>
 
-    <h3>Comments</h3>
-    <div id="comments" style="margin-bottom: 20px;">
-        {% for c in recipe.comments %}
-            <div style="border-bottom: 1px solid #eee; padding: 5px 0;">
-                <strong>{{ c.username }}:</strong> {{ c.text }}
+        <div class="recipe-controls form-row card" style="margin-bottom: 20px;">
+            <div class="form-group">
+                <label class="form-label"><strong>Servings:</strong></label>
+                <input class="form-input" type="number" id="serving-size" value="{{ recipe.servings }}" min="1" data-original-servings="{{ recipe.servings }}" style="width: 80px;">
             </div>
-        {% endfor %}
+            
+            <div class="form-group">
+                <label class="form-label"><strong>Unit Conversion:</strong></label>
+                <select class="form-select" id="unit-toggle">
+                    <option value="default">Original Units</option>
+                    <option value="g">Grams (g)</option>
+                    <option value="oz">Ounces (oz)</option>
+                    <option value="ml">Milliliters (ml)</option>
+                    <option value="cup">Cups</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="macro-box card" style="background: #fdfdfd; border-left: 6px solid var(--orange); margin-bottom: 20px;">
+            <p class="section-label"><strong>Nutrition (Scaled):</strong></p>
+            <p>
+                Calories: <span id="display-calories" class="scaled-value" data-original="{{ recipe.calories }}">{{ recipe.calories }}</span> |
+                Protein: <span id="display-protein" class="scaled-value" data-original="{{ recipe.protein }}">{{ recipe.protein }}</span>g |
+                Carbs: <span id="display-carbs" class="scaled-value" data-original="{{ recipe.carbs }}">{{ recipe.carbs }}</span>g |
+                Fat: <span id="display-fat" class="scaled-value" data-original="{{ recipe.fat }}">{{ recipe.fat }}</span>g
+            </p>
+        </div>
+
+        <p class="section-label"><strong>Ingredients:</strong></p>
+        <ul class="ingredient-list">
+            {% for ing in recipe.ingredients %}
+                <li class="ingredient-row" data-base-unit="{{ ing.unit }}">
+                    <span class="qty scaled-value" data-original-qty="{{ ing.quantity }}">{{ ing.quantity }}</span> 
+                    <span class="unit">{{ ing.unit }}</span> 
+                    <span class="ingredient-name">{{ ing.name }}</span>
+                </li>
+            {% endfor %}
+            {% if not recipe.ingredients %}
+                <li class="empty-state">No ingredients listed.</li>
+            {% endif %}
+        </ul>
+
+        <p class="section-label"><strong>Instructions:</strong></p>
+        <div class="card" style="white-space: pre-wrap; margin-bottom: 20px;">{{ recipe.instructions if recipe.instructions else "No instructions provided." }}</div>
+
+        <p class="recipe-meta">
+            <strong>Avg Rating:</strong> 
+            <span class="rating">
+                {% if avg_rating == "Not yet rated" %}
+                    {{ avg_rating }}
+                {% else %}
+                    {{ avg_rating }} ⭐
+                {% endif %}
+            </span>
+        </p>
+
+        <div class="action-buttons" style="display: flex; gap: 10px; margin-bottom: 30px;">
+            {% if is_owner %}
+                <button class="btn btn-danger" onclick="deleteRecipe()">Delete Recipe</button>
+            {% else %}
+                <button class="btn btn-success" onclick="fork_recipe()">Fork Recipe</button>
+            {% endif %}
+        </div>
+
+        <hr class="divider">
+
+        {% if not is_owner %}
+            <div id="rating-display" class="card" style="margin-bottom: 20px; {% if not user_stars %}display:none;{% endif %}">
+                <p>Your rating: <strong>{{ user_stars }} Stars</strong></p>
+                <button class="btn btn-secondary" onclick="toggleEdit()">Change Rating</button>
+            </div>
+
+            <div id="rating-form" class="card" style="margin-bottom: 20px; {% if user_stars %}display:none;{% endif %}">
+                <h3 class="section-title">Rate this Recipe</h3>
+                <div class="form-row">
+                    <select class="form-select" id="stars-input" style="width: 100px;">
+                        <option value="5">5</option>
+                        <option value="4">4</option>
+                        <option value="3">3</option>
+                        <option value="2">2</option>
+                        <option value="1">1</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="submitRating()">Submit</button>
+                    {% if user_stars %}
+                        <button class="btn btn-secondary" onclick="toggleEdit()">Cancel</button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        <h3 class="section-title">Comments</h3>
+        <div id="comments" class="comments-container">
+            {% for c in recipe.comments %}
+                <div class="comment" style="margin-bottom: 10px;">
+                    <strong class="comment-user">{{ c.username }}:</strong> 
+                    <span class="comment-text">{{ c.text }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="comment-input-row form-row card" style="margin-top: 20px;">
+            <input class="form-input" type="text" id="new-comment" placeholder="Add a comment..." style="flex: 1;">
+            <button class="btn btn-primary" onclick="submitComment()">Post</button>
+        </div>
+
+        <br>
+        <a class="nav-link" href="{{ url_for('index') }}">← Back to Dashboard</a>
+
     </div>
-    <input type="text" id="new-comment" placeholder="Add a comment..." style="width: 70%; padding: 8px;">
-    <button onclick="submitComment()" style="padding: 8px;">Post</button>
     
-    <br><br>
-    <a href="{{ url_for('index') }}">← Back to Dashboard</a>
-
-    <script>
-        const UNIT_FACTORS = {
-            "g": 1, "mg": 0.001, "kg": 1000, "oz": 28.3495, "lb": 453.592,
-            "ml": 1, "tsp": 4.92892, "tbsp": 14.7868, "cup": 240
-        };
-
-        function updateIngredients() {
-            const servingInput = document.getElementById('serving-size');
-            const newServings = parseFloat(servingInput.value) || 1;
-            const originalServings = parseFloat(servingInput.dataset.originalServings);
-            const targetUnit = document.getElementById('unit-toggle').value;
-            const ratio = newServings / originalServings;
-
-            //Scale Macros
-            ['calories', 'protein', 'carbs', 'fat'].forEach(macro => {
-                const el = document.getElementById(`display-${macro}`);
-                if (el) {
-                    const originalVal = parseFloat(el.dataset.original) || 0;
-                    el.textContent = Math.round(originalVal * ratio);
-                    el.classList.add('highlight');
-                    setTimeout(() => el.classList.remove('highlight'), 500);
-                }
-            });
-
-            //Scale Ingredients
-            document.querySelectorAll('.ingredient-row').forEach(row => {
-                const qtySpan = row.querySelector('.qty');
-                const unitSpan = row.querySelector('.unit');
-                let baseQty = parseFloat(qtySpan.dataset.originalQty) * ratio;
-                let originalUnit = row.dataset.baseUnit.toLowerCase();
-
-                if (targetUnit !== 'default' && UNIT_FACTORS[originalUnit] && UNIT_FACTORS[targetUnit]) {
-                    let qtyInBaseValue = baseQty * UNIT_FACTORS[originalUnit];
-                    baseQty = qtyInBaseValue / UNIT_FACTORS[targetUnit];
-                    unitSpan.textContent = targetUnit;
-                } else {
-                    unitSpan.textContent = row.dataset.baseUnit;
-                }
-                qtySpan.textContent = Number(baseQty.toFixed(2));
-                qtySpan.classList.add('highlight');
-                setTimeout(() => qtySpan.classList.remove('highlight'), 500);
-            });
-        }
-
-        function toggleEdit() {
-            const d = document.getElementById('rating-display'), f = document.getElementById('rating-form');
-            d.style.display = d.style.display === "none" ? "block" : "none";
-            f.style.display = f.style.display === "none" ? "block" : "none";
-        }
-
-        async function fork_recipe() {
-            const res = await fetch('/api/recipes/{{ recipe.id }}/fork', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-            if (res.ok) { alert('Recipe forked! Check your dashboard.'); window.location.href = '/'; }
-            else alert('Failed to fork recipe');
-        }
-
-        async function submitRating() {
-            const stars = document.getElementById('stars-input').value;
-            await fetch('/api/recipes/{{ recipe.id }}/rate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: parseInt(stars) }) });
-            location.reload();
-        }
-
-        async function submitComment() {
-            const text = document.getElementById('new-comment').value;
-            if (!text) return;
-            await fetch('/api/recipes/{{ recipe.id }}/comment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
-            location.reload();
-        }
-
-        async function deleteRecipe() {
-            if (confirm('Permanently delete this recipe?')) {
-                const res = await fetch('/api/recipes/{{ recipe.id }}', { method: 'DELETE' });
-                if (res.ok) window.location.href = '/';
-            }
-        }
-
-        document.getElementById('serving-size').addEventListener('input', updateIngredients);
-        document.getElementById('unit-toggle').addEventListener('change', updateIngredients);
-    </script>
+    <script src="{{ url_for('static', filename='js/recipe-detail.js') }}"></script>
 </body>
 </html>
