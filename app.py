@@ -265,40 +265,36 @@ def delete_recipe(recipe_id):
 def edit_recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     
-    # Security: Ensure only the creator can edit
     if 'user_id' not in session or recipe.user_id != session['user_id']:
         return "Unauthorized", 403
 
     if request.method == 'POST':
-        # 1. Update basic text fields
         recipe.name = request.form.get('name')
         recipe.instructions = request.form.get('instructions')
         recipe.servings = int(request.form.get('servings', 1))
         recipe.tags = request.form.get('tags')
         recipe.is_public = 'is_public' in request.form
         
-        # 2. Update Macros 
         recipe.calories = int(request.form.get('calories', 0))
         recipe.protein = int(request.form.get('protein', 0))
         recipe.carbs = int(request.form.get('carbs', 0))
         recipe.fat = int(request.form.get('fat', 0))
 
-        # 3. Update Ingredients (The Fixed Part)
-        # Delete the old ones first
+        # Wipe old ingredients
         Ingredient.query.filter_by(recipe_id=recipe.id).delete()
         
-        # Get the lists from the form
+        # Get the parallel lists
         qtys = request.form.getlist('ing_qty')
         units = request.form.getlist('ing_unit')
         names = request.form.getlist('ing_name')
 
-        # Loop through the lists and add them back to the database
+        # Save each row
         for i in range(len(names)):
-            if names[i].strip():  # Only save if the ingredient name isn't empty
+            if names[i].strip():
                 new_ing = Ingredient(
-                    quantity=qtys[i],
-                    unit=units[i],
-                    name=names[i].strip(),
+                    quantity=qtys[i], 
+                    unit=units[i], 
+                    name=names[i].strip(), 
                     recipe_id=recipe.id
                 )
                 db.session.add(new_ing)
@@ -308,7 +304,7 @@ def edit_recipe(recipe_id):
 
     return render_template('edit_recipe.html', recipe=recipe)
 
-    return render_template('edit_recipe.html', recipe=recipe)
+
 @app.route('/api/recipes/<int:recipe_id>/rate', methods=['POST'])
 def rate_recipe(recipe_id):
     if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
