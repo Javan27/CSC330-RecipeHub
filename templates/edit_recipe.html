@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Recipe</title>
+</head>
+<body>
+    <h1>Edit: {{ recipe.name }}</h1>
+
+    <form method="POST">
+        <div>
+            <label>Recipe Name:</label><br>
+            <input type="text" name="name" value="{{ recipe.name }}" required>
+        </div>
+
+        <div>
+            <label>Servings:</label><br>
+            <input type="number" name="servings" value="{{ recipe.servings }}">
+        </div>
+
+        <div>
+            <label>Instructions:</label><br>
+            <textarea name="instructions" rows="5">{{ recipe.instructions }}</textarea>
+        </div>
+
+        <h3>Ingredients</h3>
+        <div>
+            {% for ing in recipe.ingredients %}
+                <input type="text" name="ingredients" value="{{ ing.name }}"><br>
+            {% endfor %}
+            <!-- Blank inputs to allow adding more ingredients while editing -->
+            <input type="text" name="ingredients" placeholder="Add another..."><br>
+            <input type="text" name="ingredients" placeholder="Add another...">
+        </div>
+
+        <h3>Macros</h3>
+        <label>Calories:</label> <input type="number" name="calories" value="{{ recipe.calories }}"> <br>
+        <label>Protein (g):</label> <input type="number" name="protein" value="{{ recipe.protein }}"> <br>
+        <label>Carbs (g):</label> <input type="number" name="carbs" value="{{ recipe.carbs }}"> <br>
+        <label>Fat (g):</label> <input type="number" name="fat" value="{{ recipe.fat }}">
+
+        <h3>Tags & Privacy</h3>
+        <div>
+            <label>Dietary Tag:</label>
+            <select name="tags">
+                <option value="None" {% if recipe.tags == 'None' %}selected{% endif %}>None</option>
+                <option value="Vegan" {% if recipe.tags == 'Vegan' %}selected{% endif %}>Vegan</option>
+                <option value="Keto" {% if recipe.tags == 'Keto' %}selected{% endif %}>Keto</option>
+                <option value="Vegetarian" {% if recipe.tags == 'Vegetarian' %}selected{% endif %}>Vegetarian</option>
+                <option value="Gluten-Free" {% if recipe.tags == 'Gluten-Free' %}selected{% endif %}>Gluten-Free</option>
+            </select>
+        </div>
+
+        <div>
+            <label>
+                <input type="checkbox" name="is_public" {% if recipe.is_public %}checked{% endif %}>
+                Publicly Viewable
+            </label>
+        </div>
+
+        <button type="submit">Save Changes</button>
+        <a href="{{ url_for('index') }}">Cancel</a>
+    </form>
+</body>
+</html>
