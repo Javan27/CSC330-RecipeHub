@@ -16,12 +16,12 @@
             <form action="/search" method="GET" class="search-form">
                 <div class="form-group" style="flex: 1; min-width: 200px;">
                     <label class="form-label">Recipe Name:</label>
-                    <input class="form-input" type="text" name="q_name" value="{{ q_name or '' }}" placeholder="e.g. Pasta">
+                    <input class="form-input" type="text" name="q_name" value="{{ q_name or '' }}" placeholder="Search by name...">
                 </div>
 
                 <div class="form-group" style="flex: 1; min-width: 200px;">
                     <label class="form-label">Ingredient:</label>
-                    <input class="form-input" type="text" name="q_ing" value="{{ q_ing or '' }}" placeholder="e.g. Garlic">
+                    <input class="form-input" type="text" name="q_ing" value="{{ q_ing or '' }}" placeholder="Search by ingredient...">
                 </div>
 
                 <div class="form-group" style="flex: 1; min-width: 150px;">
@@ -46,9 +46,9 @@
             <h2 class="section-title">Results:</h2>
 
             {% if results %}
-                <ul class="search-results-list" style="list-style: none; padding: 0;">
+                <ul class="search-results-list">
                     {% for item in results %}
-                        <li class="search-result-item card" style="margin-bottom: 15px;">
+                        <li class="search-result-item card" style="margin-bottom: 15px; list-style: none;">
                             <div style="display: flex; justify-content: space-between; align-items: start;">
                                 <div>
                                     <h3 style="margin: 0;">
@@ -62,14 +62,14 @@
                                     </p>
                                     
                                     {% if item.context %}
-                                        <p class="result-context" style="margin: 5px 0; font-weight: bold; color: var(--orange);">
+                                        <p class="result-context">
                                             {{ item.context }}
                                         </p>
                                     {% endif %}
                                 </div>
                                 
                                 {% if item.recipe.tags %}
-                                    <span class="badge-admin" style="background: var(--dark);">{{ item.recipe.tags }}</span>
+                                    <span class="badge-admin">{{ item.recipe.tags }}</span>
                                 {% endif %}
                             </div>
                         </li>
