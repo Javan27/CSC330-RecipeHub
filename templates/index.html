@@ -110,6 +110,11 @@
             <h3><a href="/recipe/${recipe.id}">${recipe.name}</a></h3>
             <p><strong>Servings:</strong> ${recipe.servings}</p>
             <p><strong>Rating:</strong> ${recipe.avg_rating}</p>
+            
+            <div style="margin: 10px 0;">
+                <a href="/edit_recipe/${recipe.id}"><button type="button">Edit Recipe</button></a>
+            </div>
+            
             ${recipe.forked_from ? 
                 `<p style="color: #666; font-style: italic; font-size: 0.9em;">
                     Forked from: ${recipe.forked_from}
