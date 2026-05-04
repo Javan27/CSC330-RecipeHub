@@ -15,7 +15,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-#Admin Decorator [Bug Fix: Admin branch integration]
+#Admin Decorator
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -48,7 +48,6 @@ class Recipe(db.Model):
     servings = db.Column(db.Integer, nullable=False)
     instructions = db.Column(db.Text, nullable=True)
     ingredients = db.relationship('Ingredient', backref='recipe', lazy=True, cascade="all, delete-orphan")
-    #Restored from Main Branch
     calories = db.Column(db.Integer, default=0)
     protein = db.Column(db.Integer, default=0)
     carbs = db.Column(db.Integer, default=0)
@@ -72,6 +71,14 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
     username = db.Column(db.String(80))
+
+#SESSION CLEANUP [Bug Fix: Prevents AttributeError on First Boot]
+@app.before_request
+def clear_stale_session():
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if not user:
+            session.clear()
 
 #Admin Routes
 @app.route('/admin')
@@ -125,6 +132,9 @@ def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     user = User.query.get(session['user_id'])
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
     return render_template('index.html', username=session.get('username'), is_admin=user.is_admin)
 
 @app.route('/recipe/<int:recipe_id>')
@@ -145,7 +155,6 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-        #The 'if user' check here prevents the NoneType error
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
             session['username'] = user.username
@@ -163,7 +172,15 @@ def create_account():
             return "Passwords do not match", 400
         if User.query.filter_by(username=username).first():
             return "Username already exists", 400
-        new_user = User(username=username, password=generate_password_hash(password))
+        
+        #NOTE: Manually setting the first user to admin if database is empty
+        is_first_user = User.query.count() == 0
+        new_user = User(
+            username=username, 
+            password=generate_password_hash(password),
+            is_admin=is_first_user
+        )
+        
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for('login'))
@@ -176,22 +193,32 @@ def logout():
 
 @app.route('/search')
 def search():
-    query = request.args.get('q', '').strip()
-    results_data = []
-    if query:
-        results = Recipe.query.outerjoin(Ingredient).filter(
-            ((Recipe.name.contains(query)) |
-             (Ingredient.name.contains(query)) |
-             (Recipe.tags.contains(query))) &
-            ((Recipe.is_public == True) | (Recipe.user_id == session.get('user_id')))
-        ).distinct().all()
+    q_name = request.args.get('q_name', '').strip()
+    q_ing = request.args.get('q_ing', '').strip()
+    q_tag = request.args.get('q_tag', '').strip()
+    
+    query_obj = Recipe.query.outerjoin(Ingredient).filter(
+        (Recipe.is_public == True) | (Recipe.user_id == session.get('user_id'))
+    )
 
-        for r in results:
-            matched_ingredient = next((ing.name for ing in r.ingredients if query.lower() in ing.name.lower()), None)
-            match_context = f"Has ingredient: {matched_ingredient}" if matched_ingredient else None
-            results_data.append({'recipe': r, 'context': match_context})
-            
-    return render_template('search_results.html', results=results_data, query=query)
+    active_filters = []
+    if q_name: active_filters.append(Recipe.name.ilike(f'%{q_name}%'))
+    if q_ing: active_filters.append(Ingredient.name.ilike(f'%{q_ing}%'))
+    if q_tag: active_filters.append(Recipe.tags.ilike(f'%{q_tag}%'))
+
+    if active_filters:
+        query_obj = query_obj.filter(or_(*active_filters))
+    
+    results = query_obj.distinct().all()
+    results_data = []
+    for r in results:
+        context = None
+        if q_ing:
+            match = next((i.name for i in r.ingredients if q_ing.lower() in i.name.lower()), None)
+            if match: context = f"Has ingredient: {match}"
+        results_data.append({'recipe': r, 'context': context})
+
+    return render_template('search_results.html', results=results_data, q_name=q_name, q_ing=q_ing, q_tag=q_tag)
 
 #API Routes
 @app.route('/api/recipes', methods=['GET'])
