@@ -272,3 +272,11 @@ th {
 .hidden {
     display: none;
 }
+
+.recipe-img {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin: 15px 0;
+}

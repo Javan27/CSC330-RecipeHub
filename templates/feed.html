@@ -59,6 +59,9 @@
                             <a class="recipe-link" href="/recipe/{{ recipe.id }}">
                                 {{ recipe.name }}
                             </a>
+                            {% if recipe.image_filename %}
+                                <img src="{{ url_for('static', filename='uploads/' ~ recipe.image_filename) }}" alt="{{ recipe.name }}" class="recipe-img">
+                            {% endif %}
                         </h2>
 
                         {% if recipe.forked_from %}

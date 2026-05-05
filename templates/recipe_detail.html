@@ -10,6 +10,10 @@
     <div class="container recipe-container">
 
         <h1 class="page-title recipe-title">{{ recipe.name }}</h1>
+        
+        {% if recipe.image_filename %}
+            <img src="{{ url_for('static', filename='uploads/' ~ recipe.image_filename) }}" alt="{{ recipe.name }}" class="recipe-img">
+        {% endif %}
 
         <p class="recipe-meta">
             <strong>Created by:</strong> 
