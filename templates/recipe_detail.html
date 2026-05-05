@@ -3,7 +3,6 @@
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>{{ recipe.name }} Details</title>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -14,7 +13,7 @@
         <h1 class="page-title recipe-title">{{ recipe.name }}</h1>
         
         {% if recipe.image_filename %}
-            <img src="{{ url_for('static', filename='uploads/' ~ recipe.image_filename) }}" alt="{{ recipe.name }}" class="recipe-img">
+            <img src="{{ url_for('static', filename='uploads/' ~ recipe.image_filename) }}" alt="{{ recipe.name }}" class="recipe-img" style="max-width: 100%; border-radius: 12px; margin-bottom: 20px;">
         {% endif %}
 
         <p class="recipe-meta">
@@ -62,17 +61,16 @@
             <div class="macro-box card" style="background: #fdfdfd; border-left: 6px solid var(--orange); margin-bottom: 20px;">
             <p class="section-label"><strong>Nutrition (Scaled):</strong></p>
             <p>
-                Calories: <span id="display-calories" class="scaled-value">{{ recipe.calories or 0 }}</span> |
-                Protein: <span id="display-protein" class="scaled-value">{{ recipe.protein or 0 }}</span>g |
-                Carbs: <span id="display-carbs" class="scaled-value">{{ recipe.carbs or 0 }}</span>g |
-                Fat: <span id="display-fat" class="scaled-value">{{ recipe.fat or 0 }}</span>g
+                Calories: <span id="display-calories" class="scaled-value" data-original="{{ recipe.calories or 0 }}">{{ recipe.calories or 0 }}</span> |
+                Protein: <span id="display-protein" class="scaled-value" data-original="{{ recipe.protein or 0 }}">{{ recipe.protein or 0 }}</span>g |
+                Carbs: <span id="display-carbs" class="scaled-value" data-original="{{ recipe.carbs or 0 }}">{{ recipe.carbs or 0 }}</span>g |
+                Fat: <span id="display-fat" class="scaled-value" data-original="{{ recipe.fat or 0 }}">{{ recipe.fat or 0 }}</span>g
             </p>
         </div>
         {% endif %}
 
-        <!-- ✅ PIE CHART -->
-        <div class="card" style="margin-bottom: 20px;">
-            <canvas id="macroChart" style="width: 150px; height: 150px;"></canvas>
+        <div class="card" style="margin-bottom: 20px; display: flex; justify-content: center;">
+            <canvas id="macroChart" width="200" height="200"></canvas>
         </div>
 
         <p class="section-label"><strong>Ingredients:</strong></p>
@@ -159,93 +157,85 @@
 
     <script src="{{ url_for('static', filename='js/recipe-detail.js') }}"></script>
 
-    <!-- ✅ LIVE MACRO PIE CHART -->
     <script>
-document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function () {
+        //Base macro values from backend
+        const proteinBase = Number("{{ recipe.protein or 0 }}");
+        const carbsBase = Number("{{ recipe.carbs or 0 }}");
+        const fatBase = Number("{{ recipe.fat or 0 }}");
 
-    const proteinBase = Number("{{ recipe.protein or 0 }}");
-    const carbsBase = Number("{{ recipe.carbs or 0 }}");
-    const fatBase = Number("{{ recipe.fat or 0 }}");
+        const servingInput = document.getElementById("serving-size");
+        const chartContainer = document.getElementById("macroChart").closest(".card");
 
-    const servingInput = document.getElementById("serving-size");
-    const chartCanvas = document.getElementById("macroChart").closest("div");
+        let chart;
 
-    let chart;
-
-    function getScale() {
-        const original = Number(servingInput.dataset.originalServings);
-        const current = Number(servingInput.value);
-        return current / original;
-    }
-
-    function getData() {
-        const scale = getScale();
-
-        const protein = proteinBase * scale;
-        const carbs = carbsBase * scale;
-        const fat = fatBase * scale;
-
-        const total = protein + carbs + fat;
-
-        // if no real data
-        if (total === 0) return null;
-
-        return [protein, carbs, fat];
-    }
-
-    function createChart() {
-        const data = getData();
-
-        // 🚫 hide entire chart block if no data
-        if (!data) {
-            chartCanvas.style.display = "none";
-            return;
+        function getScale() {
+            const original = Number(servingInput.dataset.originalServings) || 1;
+            const current = Number(servingInput.value) || 1;
+            return current / original;
         }
 
-        chartCanvas.style.display = "block";
+        function getData() {
+            const scale = getScale();
+            const protein = proteinBase * scale;
+            const carbs = carbsBase * scale;
+            const fat = fatBase * scale;
 
-        const ctx = document.getElementById("macroChart").getContext("2d");
+            if ((protein + carbs + fat) === 0) return null;
+            return [protein, carbs, fat];
+        }
 
-        if (chart) chart.destroy();
-
-        chart = new Chart(ctx, {
-            type: "pie",
-            data: {
-                labels: ["Protein", "Carbs", "Fat"],
-                datasets: [{
-                    data: data,
-                    backgroundColor: ["red", "yellow", "blue"]
-                }]
-            },
-            options: {
-                responsive: false,
-                maintainAspectRatio: false
+        function initChart() {
+            const data = getData();
+            if (!data) {
+                chartContainer.style.display = "none";
+                return;
             }
-        });
-    }
 
-    function updateChart() {
-        const data = getData();
+            chartContainer.style.display = "flex";
+            const ctx = document.getElementById("macroChart").getContext("2d");
 
-        if (!data) {
-            chartCanvas.style.display = "none";
             if (chart) chart.destroy();
-            return;
+
+            chart = new Chart(ctx, {
+                type: "pie",
+                data: {
+                    labels: ["Protein", "Carbs", "Fat"],
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ["#e74c3c", "#f1c40f", "#3498db"]
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
         }
 
-        chartCanvas.style.display = "block";
+        function updateChart() {
+            const data = getData();
+            if (!data) {
+                chartContainer.style.display = "none";
+                if (chart) chart.destroy();
+                return;
+            }
 
-        chart.data.datasets[0].data = data;
-        chart.update();
-    }
+            chartContainer.style.display = "flex";
+            if (!chart) {
+                initChart();
+            } else {
+                chart.data.datasets[0].data = data;
+                chart.update();
+            }
+        }
 
-    createChart();
-
-    servingInput.addEventListener("input", function () {
-        updateChart();
+        initChart();
+        servingInput.addEventListener("input", updateChart);
     });
-
-});
-</script>
+    </script>
 </body>
 </html>
