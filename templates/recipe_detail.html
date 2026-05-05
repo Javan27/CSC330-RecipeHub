@@ -70,7 +70,6 @@
         </div>
         {% endif %}
 
-        <!-- ✅ PIE CHART -->
         <div class="card" style="margin-bottom: 20px;">
             <canvas id="macroChart" style="width: 150px; height: 150px;"></canvas>
         </div>
@@ -78,15 +77,14 @@
         <p class="section-label"><strong>Ingredients:</strong></p>
         <ul class="ingredient-list">
             {% for ing in recipe.ingredients %}
-                <li class="ingredient-row" data-base-unit="{{ ing.unit }}">
-                    <span class="qty scaled-value" data-original-qty="{{ ing.quantity }}">{{ ing.quantity }}</span> 
+                <li class="ingredient-row"
+                    data-base-qty="{{ ing.quantity }}"
+                    data-base-unit="{{ ing.unit }}">
+                    <span class="qty">{{ ing.quantity }}</span> 
                     <span class="unit">{{ ing.unit }}</span> 
                     <span class="ingredient-name">{{ ing.name }}</span>
                 </li>
             {% endfor %}
-            {% if not recipe.ingredients %}
-                <li class="empty-state">No ingredients listed.</li>
-            {% endif %}
         </ul>
 
         <p class="section-label"><strong>Instructions:</strong></p>
@@ -94,83 +92,21 @@
             {{ recipe.instructions if recipe.instructions else "No instructions provided." }}
         </div>
 
-        <p class="recipe-meta">
-            <strong>Avg Rating:</strong> 
-            <span class="rating">
-                {% if avg_rating == "Not yet rated" %}
-                    {{ avg_rating }}
-                {% else %}
-                    {{ avg_rating }} ⭐
-                {% endif %}
-            </span>
-        </p>
-
-        <div class="action-buttons" style="display: flex; gap: 10px; margin-bottom: 30px;">
-            {% if is_owner %}
-                <a href="/edit_recipe/{{ recipe.id }}" class="btn btn-primary" style="text-decoration: none;">Edit Recipe</a>
-                <button class="btn btn-danger" onclick="deleteRecipe()">Delete Recipe</button>
-            {% else %}
-                <button class="btn btn-success" onclick="fork_recipe()">Fork Recipe</button>
-            {% endif %}
-        </div>
-
-        <hr class="divider">
-
-        {% if not is_owner %}
-            <div id="rating-display" class="card" style="margin-bottom: 20px; {% if not user_stars %}display:none;{% endif %}">
-                <p>Your rating: <strong>{{ user_stars }} Stars</strong></p>
-                <button class="btn btn-secondary" onclick="toggleEdit()">Change Rating</button>
-            </div>
-
-            <div id="rating-form" class="card" style="margin-bottom: 20px; {% if user_stars %}display:none;{% endif %}">
-                <h3 class="section-title">Rate this Recipe</h3>
-                <div class="form-row">
-                    <select class="form-select" id="stars-input" style="width: 100px;">
-                        <option value="5">5</option>
-                        <option value="4">4</option>
-                        <option value="3">3</option>
-                        <option value="2">2</option>
-                        <option value="1">1</option>
-                    </select>
-                    <button class="btn btn-primary" onclick="submitRating()">Submit</button>
-                </div>
-            </div>
-        {% endif %}
-
-        <h3 class="section-title">Comments</h3>
-        <div id="comments" class="comments-container">
-            {% for c in recipe.comments %}
-                <div class="comment" style="margin-bottom: 10px;">
-                    <strong class="comment-user">{{ c.username }}:</strong> 
-                    <span class="comment-text">{{ c.text }}</span>
-                </div>
-            {% endfor %}
-        </div>
-
-        <div class="comment-input-row form-row card" style="margin-top: 20px;">
-            <input class="form-input" type="text" id="new-comment" placeholder="Add a comment..." style="flex: 1;">
-            <button class="btn btn-primary" onclick="submitComment()">Post</button>
-        </div>
-
-        <br>
-        <a class="nav-link" href="{{ url_for('index') }}">← Back to Dashboard</a>
-
     </div>
 
     <script src="{{ url_for('static', filename='js/recipe-detail.js') }}"></script>
 
-    <!-- ✅ LIVE MACRO PIE CHART -->
+    <!-- ✅ MACRO + UNIT LOGIC -->
     <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-    const proteinBase = Number("{{ recipe.protein or 0 }}");
-    const carbsBase = Number("{{ recipe.carbs or 0 }}");
-    const fatBase = Number("{{ recipe.fat or 0 }}");
-
     const servingInput = document.getElementById("serving-size");
-    const chartCanvas = document.getElementById("macroChart").closest("div");
+    const unitToggle = document.getElementById("unit-toggle");
 
-    let chart;
+    const rows = document.querySelectorAll(".ingredient-row");
+
+    const volumeUnits = ["tsp", "tbsp", "cup", "ml"];
+    const weightUnits = ["g", "oz", "lb"];
 
     function getScale() {
         const original = Number(servingInput.dataset.originalServings);
@@ -178,74 +114,46 @@ document.addEventListener("DOMContentLoaded", function () {
         return current / original;
     }
 
-    function getData() {
-        const scale = getScale();
+    // ✅ SAFE UNIT FILTER (NO CROSS CONVERSION)
+    function safeUnit(unit, mode) {
 
-        const protein = proteinBase * scale;
-        const carbs = carbsBase * scale;
-        const fat = fatBase * scale;
+        if (mode === "default") return unit;
 
-        const total = protein + carbs + fat;
-
-        // if no real data
-        if (total === 0) return null;
-
-        return [protein, carbs, fat];
-    }
-
-    function createChart() {
-        const data = getData();
-
-        // 🚫 hide entire chart block if no data
-        if (!data) {
-            chartCanvas.style.display = "none";
-            return;
+        if (mode === "volume") {
+            return volumeUnits.includes(unit) ? unit : unit;
         }
 
-        chartCanvas.style.display = "block";
+        if (mode === "weight") {
+            return weightUnits.includes(unit) ? unit : unit;
+        }
 
-        const ctx = document.getElementById("macroChart").getContext("2d");
+        return unit;
+    }
 
-        if (chart) chart.destroy();
+    function updateIngredients() {
 
-        chart = new Chart(ctx, {
-            type: "pie",
-            data: {
-                labels: ["Protein", "Carbs", "Fat"],
-                datasets: [{
-                    data: data,
-                    backgroundColor: ["red", "yellow", "blue"]
-                }]
-            },
-            options: {
-                responsive: false,
-                maintainAspectRatio: false
-            }
+        const scale = getScale();
+        const mode = unitToggle.value;
+
+        rows.forEach(row => {
+
+            const baseQty = parseFloat(row.dataset.baseQty);
+            const baseUnit = row.dataset.baseUnit;
+
+            if (isNaN(baseQty)) return;
+
+            const newQty = Math.round(baseQty * scale * 100) / 100;
+
+            row.querySelector(".qty").textContent = newQty;
+            row.querySelector(".unit").textContent = safeUnit(baseUnit, mode);
         });
     }
 
-    function updateChart() {
-        const data = getData();
-
-        if (!data) {
-            chartCanvas.style.display = "none";
-            if (chart) chart.destroy();
-            return;
-        }
-
-        chartCanvas.style.display = "block";
-
-        chart.data.datasets[0].data = data;
-        chart.update();
-    }
-
-    createChart();
-
-    servingInput.addEventListener("input", function () {
-        updateChart();
-    });
+    servingInput.addEventListener("input", updateIngredients);
+    unitToggle.addEventListener("change", updateIngredients);
 
 });
 </script>
+
 </body>
 </html>
