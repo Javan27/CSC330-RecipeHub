@@ -188,6 +188,19 @@
         }
 
        function createChart() {
+        const data = getData();
+
+        const container = document.getElementById("macroChartContainer");
+
+        // Hide everything if no values
+        if (!data || data.every(val => !val || val === 0)) {
+            container.style.display = "none";
+            return;
+        }
+
+        
+        container.style.display = "block";
+
         const ctx = document.getElementById("macroChart").getContext("2d");
 
         chart = new Chart(ctx, {
@@ -195,7 +208,7 @@
             data: {
                 labels: ["Protein", "Carbs", "Fat"],
                 datasets: [{
-                    data: getData(),
+                    data: data,
                     backgroundColor: ["red", "yellow", "blue"]
                 }]
             },
