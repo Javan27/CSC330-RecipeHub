@@ -74,7 +74,9 @@
 
                         <div class="recipe-meta" style="margin-bottom: 15px;">
                             {% if recipe.tags %}
-                                <span class="badge-admin" style="background: var(--dark);">{{ recipe.tags|capitalize }}</span>
+                                {% for tag in recipe.tags.split(',') %}
+                                <span class="badge-admin" style="background: var(--dark);">{{ tag.strip().capitalize() }}</span>
+                                {% endfor %}
                             {% endif %}
                             <span style="margin-left: 8px; font-size: 0.9em; color: var(--muted);">{{ recipe.calories or 0 }} Cal</span>
                         </div>

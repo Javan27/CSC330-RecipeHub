@@ -77,12 +77,11 @@
                 <div class="form-row" style="display: flex; gap: 20px; align-items: center; margin-top: 20px;">
                     <div class="form-group">
                         <label class="form-label">Category Tag:</label>
-                        <select class="form-select" name="tags">
-                            <option value="">No Tag</option>
-                            {% for tag in ['keto', 'sugar-free', 'protein', 'nut-free', 'vegan'] %}
-                                <option value="{{ tag }}" {% if recipe.tags == tag %}selected{% endif %}>{{ tag|capitalize }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="form-group">
+                            <label class="form-label">Tags:</label>
+                            <input  class="form-input" type="text" name="tags" value="{{ recipe.tags or '' }}" placeholder="fried, oven, hot">
+                            <small>Separate tags with commas.</small>
+                        </div>
                     </div>
 
                     <label class="checkbox-label" style="display: flex; align-items: center; gap: 5px; cursor: pointer; margin-top: 25px;">

@@ -437,49 +437,60 @@ def create_recipe():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
 
-    data = request.json
+    name = request.form.get('name', '').strip()
 
-    if not data.get('name') or not data['name'].strip():
+    if not name:
         return jsonify({'error': 'Recipe name cannot be blank'}), 400
 
     try:
-        servings = int(data.get('servings', 1))
-
+        servings = int(request.form.get('servings', 1))
         if servings < 1:
             servings = 1
-
     except:
         servings = 1
 
-    ingredients = data.get('ingredients', [])
+    names = request.form.getlist('ing_name')
+    qtys = request.form.getlist('ing_qty')
+    units = request.form.getlist('ing_unit')
 
-    if not ingredients:
+    valid_ingredients = []
+
+    for i in range(len(names)):
+        if names[i].strip():
+            valid_ingredients.append({
+                'name': names[i].strip(),
+                'quantity': qtys[i] if i < len(qtys) else '1',
+                'unit': units[i] if i < len(units) else ''
+            })
+
+    if not valid_ingredients:
         return jsonify({'error': 'A recipe must contain at least one ingredient'}), 400
 
+    uploaded_image = request.files.get('recipe_image')
+    image_filename = save_recipe_image(uploaded_image)
+
     new_recipe = Recipe(
-        name=data['name'],
+        name=name,
         servings=servings,
-        instructions=data.get('instructions', ''),
-        tags=data.get('tags', ''),
-        is_public=data.get('is_public', True),
+        instructions=request.form.get('instructions', ''),
+        tags=request.form.get('tags', ''),
+        is_public=request.form.get('is_public') == 'true',
         user_id=session['user_id'],
-        calories=data.get('calories', 0),
-        protein=data.get('protein', 0),
-        carbs=data.get('carbs', 0),
-        fat=data.get('fat', 0)
+        calories=int(request.form.get('calories', 0)),
+        protein=int(request.form.get('protein', 0)),
+        carbs=int(request.form.get('carbs', 0)),
+        fat=int(request.form.get('fat', 0)),
+        image_filename=image_filename
     )
 
     db.session.add(new_recipe)
     db.session.flush()
 
-    for ing_data in ingredients:
-        if not ing_data.get('name'):
-            continue
-
+    for ing in valid_ingredients:
         db.session.add(Ingredient(
-            quantity=ing_data.get('quantity', '1'),
-            unit=ing_data.get('unit', ''),
-            name=ing_data['name'],
+            quantity=ing['quantity'],
+            unit=ing['unit'],
+            name=ing['name'],
             recipe_id=new_recipe.id
         ))
 
