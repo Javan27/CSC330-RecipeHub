@@ -3,6 +3,8 @@
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>{{ recipe.name }} Details</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="page-body" data-recipe-id="{{ recipe.id }}">
@@ -34,7 +36,11 @@
         <div class="recipe-controls form-row card" style="margin-bottom: 20px;">
             <div class="form-group">
                 <label class="form-label"><strong>Servings:</strong></label>
-                <input class="form-input" type="number" id="serving-size" value="{{ recipe.servings }}" min="1" data-original-servings="{{ recipe.servings }}" style="width: 80px;">
+                <input class="form-input" type="number" id="serving-size"
+                    value="{{ recipe.servings }}"
+                    min="1"
+                    data-original-servings="{{ recipe.servings }}"
+                    style="width: 80px;">
             </div>
             
             <div class="form-group">
@@ -55,11 +61,16 @@
         <div class="macro-box card" style="background: #fdfdfd; border-left: 6px solid var(--orange); margin-bottom: 20px;">
             <p class="section-label"><strong>Nutrition (Scaled):</strong></p>
             <p>
-                Calories: <span id="display-calories" class="scaled-value" data-original="{{ recipe.calories }}">{{ recipe.calories }}</span> |
-                Protein: <span id="display-protein" class="scaled-value" data-original="{{ recipe.protein }}">{{ recipe.protein }}</span>g |
-                Carbs: <span id="display-carbs" class="scaled-value" data-original="{{ recipe.carbs }}">{{ recipe.carbs }}</span>g |
-                Fat: <span id="display-fat" class="scaled-value" data-original="{{ recipe.fat }}">{{ recipe.fat }}</span>g
+                Calories: <span id="display-calories" class="scaled-value">{{ recipe.calories or 0 }}</span> |
+                Protein: <span id="display-protein" class="scaled-value">{{ recipe.protein or 0 }}</span>g |
+                Carbs: <span id="display-carbs" class="scaled-value">{{ recipe.carbs or 0 }}</span>g |
+                Fat: <span id="display-fat" class="scaled-value">{{ recipe.fat or 0 }}</span>g
             </p>
+        </div>
+
+        <!-- ✅ PIE CHART -->
+        <div class="card" style="margin-bottom: 20px;">
+            <canvas id="macroChart"></canvas>
         </div>
 
         <p class="section-label"><strong>Ingredients:</strong></p>
@@ -77,7 +88,9 @@
         </ul>
 
         <p class="section-label"><strong>Instructions:</strong></p>
-        <div class="card" style="white-space: pre-wrap; margin-bottom: 20px;">{{ recipe.instructions if recipe.instructions else "No instructions provided." }}</div>
+        <div class="card" style="white-space: pre-wrap; margin-bottom: 20px;">
+            {{ recipe.instructions if recipe.instructions else "No instructions provided." }}
+        </div>
 
         <p class="recipe-meta">
             <strong>Avg Rating:</strong> 
@@ -118,9 +131,6 @@
                         <option value="1">1</option>
                     </select>
                     <button class="btn btn-primary" onclick="submitRating()">Submit</button>
-                    {% if user_stars %}
-                        <button class="btn btn-secondary" onclick="toggleEdit()">Cancel</button>
-                    {% endif %}
                 </div>
             </div>
         {% endif %}
@@ -144,7 +154,67 @@
         <a class="nav-link" href="{{ url_for('index') }}">← Back to Dashboard</a>
 
     </div>
-    
+
     <script src="{{ url_for('static', filename='js/recipe-detail.js') }}"></script>
+
+    <!-- ✅ LIVE MACRO PIE CHART -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const proteinBase = Number("{{ recipe.protein or 0 }}");
+        const carbsBase = Number("{{ recipe.carbs or 0 }}");
+        const fatBase = Number("{{ recipe.fat or 0 }}");
+
+        const servingInput = document.getElementById("serving-size");
+
+        let chart;
+
+        function getScale() {
+            const original = Number(servingInput.dataset.originalServings);
+            const current = Number(servingInput.value);
+            return current / original;
+        }
+
+        function getData() {
+            const scale = getScale();
+
+            const protein = proteinBase * scale;
+            const carbs = carbsBase * scale;
+            const fat = fatBase * scale;
+
+            const total = protein + carbs + fat;
+
+            return total === 0 ? [1,1,1] : [protein, carbs, fat];
+        }
+
+        function createChart() {
+            const ctx = document.getElementById("macroChart").getContext("2d");
+
+            chart = new Chart(ctx, {
+                type: "pie",
+                data: {
+                    labels: ["Protein", "Carbs", "Fat"],
+                    datasets: [{
+                        data: getData(),
+                        backgroundColor: ["red", "yellow", "blue"]
+                    }]
+                }
+            });
+        }
+
+        function updateChart() {
+            chart.data.datasets[0].data = getData();
+            chart.update();
+        }
+
+        createChart();
+
+        servingInput.addEventListener("input", function () {
+            updateChart();
+        });
+
+    });
+    </script>
+
 </body>
 </html>
