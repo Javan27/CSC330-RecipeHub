@@ -187,20 +187,24 @@
             return total === 0 ? [1,1,1] : [protein, carbs, fat];
         }
 
-        function createChart() {
-            const ctx = document.getElementById("macroChart").getContext("2d");
+       function createChart() {
+        const ctx = document.getElementById("macroChart").getContext("2d");
 
-            chart = new Chart(ctx, {
-                type: "pie",
-                data: {
-                    labels: ["Protein", "Carbs", "Fat"],
-                    datasets: [{
-                        data: getData(),
-                        backgroundColor: ["red", "yellow", "blue"]
-                    }]
-                }
-            });
-        }
+        chart = new Chart(ctx, {
+            type: "pie",
+            data: {
+                labels: ["Protein", "Carbs", "Fat"],
+                datasets: [{
+                    data: getData(),
+                    backgroundColor: ["red", "yellow", "blue"]
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false
+            }
+        });
+    }
 
         function updateChart() {
             chart.data.datasets[0].data = getData();
