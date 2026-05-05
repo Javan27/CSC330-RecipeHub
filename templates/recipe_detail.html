@@ -58,7 +58,8 @@
             </div>
         </div>
 
-        <div class="macro-box card" style="background: #fdfdfd; border-left: 6px solid var(--orange); margin-bottom: 20px;">
+        {% if recipe.calories or recipe.protein or recipe.carbs or recipe.fat %}
+            <div class="macro-box card" style="background: #fdfdfd; border-left: 6px solid var(--orange); margin-bottom: 20px;">
             <p class="section-label"><strong>Nutrition (Scaled):</strong></p>
             <p>
                 Calories: <span id="display-calories" class="scaled-value">{{ recipe.calories or 0 }}</span> |
@@ -67,6 +68,7 @@
                 Fat: <span id="display-fat" class="scaled-value">{{ recipe.fat or 0 }}</span>g
             </p>
         </div>
+        {% endif %}
 
         <!-- ✅ PIE CHART -->
         <div class="card" style="margin-bottom: 20px;">
