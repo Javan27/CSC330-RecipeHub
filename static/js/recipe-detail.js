@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const servingInput = document.getElementById('serving-size');
     const unitToggle = document.getElementById('unit-toggle');
 
-    // Factors for consistent mass/volume conversion
+    // Factors for mass/volume conversion
     const UNIT_FACTORS = {
         "g": 1,
         "mg": 0.001,
@@ -18,21 +18,24 @@ document.addEventListener('DOMContentLoaded', () => {
         "cup": 240
     };
 
-    // [BUG FIX]: Units that should only scale, never convert
+    // Units that scale by serving but skip unit conversion math
     const NON_CONVERTIBLE_UNITS = ["piece", "pinch", "can", "bottle", "slice"];
 
     window.updateIngredients = function() {
         const newServings = parseFloat(servingInput.value) || 1;
-        const originalServings = parseFloat(servingInput.dataset.originalServings);
+        const originalServings = parseFloat(servingInput.dataset.originalServings) || 1;
         const targetUnit = unitToggle.value;
         const ratio = newServings / originalServings;
 
-        // Scale Nutrition Macros
+        // Scale Nutrition Macros using the new data-original hooks
         ['calories', 'protein', 'carbs', 'fat'].forEach(macro => {
             const el = document.getElementById(`display-${macro}`);
             if (el) {
+                // BUG FIX: Pulling from dataset.original ensures math doesn't default to 0
                 const originalVal = parseFloat(el.dataset.original) || 0;
                 el.textContent = Math.round(originalVal * ratio);
+                
+                // Visual feedback
                 el.classList.add('highlight');
                 setTimeout(() => el.classList.remove('highlight'), 500);
             }
@@ -46,21 +49,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!qtySpan || !unitSpan) return;
 
             let baseQty = parseFloat(qtySpan.dataset.originalQty) * ratio;
-            let originalUnit = row.dataset.baseUnit.toLowerCase();
+            let originalUnit = (row.dataset.baseUnit || "").toLowerCase();
 
-            // Logic: Skip unit conversion for discrete items
+            // Handle discrete items vs measurable volume/mass
             if (NON_CONVERTIBLE_UNITS.includes(originalUnit)) {
                 unitSpan.textContent = row.dataset.baseUnit;
                 qtySpan.textContent = Number(baseQty.toFixed(2));
             } 
-            // Standard conversion logic for measurable units
             else if (targetUnit !== 'default' && UNIT_FACTORS[originalUnit] && UNIT_FACTORS[targetUnit]) {
                 let qtyInBaseUnit = baseQty * UNIT_FACTORS[originalUnit];
                 baseQty = qtyInBaseUnit / UNIT_FACTORS[targetUnit];
                 unitSpan.textContent = targetUnit;
                 qtySpan.textContent = Number(baseQty.toFixed(2));
             } 
-            // Default: Just scale the quantity
             else {
                 unitSpan.textContent = row.dataset.baseUnit;
                 qtySpan.textContent = Number(baseQty.toFixed(2));
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- Action Functions ---
+    // --- Action Handlers ---
 
     window.deleteRecipe = async function () {
         if (confirm('Permanently delete this recipe?')) {
@@ -88,8 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
             alert('Recipe forked successfully!');
             window.location.href = '/';
-        } else {
-            alert('Failed to fork recipe');
         }
     };
 
@@ -117,11 +116,13 @@ document.addEventListener('DOMContentLoaded', () => {
     window.toggleEdit = function () {
         const display = document.getElementById('rating-display');
         const form = document.getElementById('rating-form');
-        display.style.display = display.style.display === 'none' ? 'block' : 'none';
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        if (display && form) {
+            display.style.display = display.style.display === 'none' ? 'block' : 'none';
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
     };
 
-    // Event Listeners for Real-Time Updates
+    // Initialize listeners
     servingInput?.addEventListener('input', window.updateIngredients);
     unitToggle?.addEventListener('change', window.updateIngredients);
 });
