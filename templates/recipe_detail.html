@@ -159,49 +159,53 @@
 
     <!-- ✅ LIVE MACRO PIE CHART -->
     <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
 
-        const proteinBase = Number("{{ recipe.protein or 0 }}");
-        const carbsBase = Number("{{ recipe.carbs or 0 }}");
-        const fatBase = Number("{{ recipe.fat or 0 }}");
+    const proteinBase = Number("{{ recipe.protein or 0 }}");
+    const carbsBase = Number("{{ recipe.carbs or 0 }}");
+    const fatBase = Number("{{ recipe.fat or 0 }}");
 
-        const servingInput = document.getElementById("serving-size");
+    const servingInput = document.getElementById("serving-size");
+    const chartCanvas = document.getElementById("macroChart").closest("div");
 
-        let chart;
+    let chart;
 
-        function getScale() {
-            const original = Number(servingInput.dataset.originalServings);
-            const current = Number(servingInput.value);
-            return current / original;
-        }
+    function getScale() {
+        const original = Number(servingInput.dataset.originalServings);
+        const current = Number(servingInput.value);
+        return current / original;
+    }
 
-        function getData() {
-            const scale = getScale();
+    function getData() {
+        const scale = getScale();
 
-            const protein = proteinBase * scale;
-            const carbs = carbsBase * scale;
-            const fat = fatBase * scale;
+        const protein = proteinBase * scale;
+        const carbs = carbsBase * scale;
+        const fat = fatBase * scale;
 
-            const total = protein + carbs + fat;
+        const total = protein + carbs + fat;
 
-            return total === 0 ? [1,1,1] : [protein, carbs, fat];
-        }
+        // if no real data
+        if (total === 0) return null;
 
-       function createChart() {
+        return [protein, carbs, fat];
+    }
+
+    function createChart() {
         const data = getData();
 
-        const container = document.getElementById("macroChartContainer");
-
-        // Hide everything if no values
-        if (!data || data.every(val => !val || val === 0)) {
-            container.style.display = "none";
+        // 🚫 hide entire chart block if no data
+        if (!data) {
+            chartCanvas.style.display = "none";
             return;
         }
 
-        
-        container.style.display = "block";
+        chartCanvas.style.display = "block";
 
         const ctx = document.getElementById("macroChart").getContext("2d");
+
+        if (chart) chart.destroy();
 
         chart = new Chart(ctx, {
             type: "pie",
@@ -219,19 +223,28 @@
         });
     }
 
-        function updateChart() {
-            chart.data.datasets[0].data = getData();
-            chart.update();
+    function updateChart() {
+        const data = getData();
+
+        if (!data) {
+            chartCanvas.style.display = "none";
+            if (chart) chart.destroy();
+            return;
         }
 
-        createChart();
+        chartCanvas.style.display = "block";
 
-        servingInput.addEventListener("input", function () {
-            updateChart();
-        });
+        chart.data.datasets[0].data = data;
+        chart.update();
+    }
 
+    createChart();
+
+    servingInput.addEventListener("input", function () {
+        updateChart();
     });
-    </script>
 
+});
+</script>
 </body>
 </html>
