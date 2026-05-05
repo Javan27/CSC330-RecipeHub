@@ -11,7 +11,7 @@
         <h1 class="page-title">Edit Recipe</h1>
 
         <div class="card form-card">
-            <form method="POST" action="/edit_recipe/{{ recipe.id }}">
+            <form method="POST" action="/edit_recipe/{{ recipe.id }}" enctype="multipart/form-data">
                 
                 <div class="form-group">
                     <label class="form-label">Recipe Name:</label>
@@ -92,6 +92,7 @@
                 </div>
 
                 <div class="form-row" style="margin-top: 30px; gap: 15px;">
+                    <input type="file" name="recipe_image" accept="image/*">
                     <button class="btn btn-primary" type="submit">Save Changes</button>
                     <a href="{{ url_for('index') }}" class="btn btn-secondary" style="text-decoration: none; text-align: center;">Cancel</a>
                 </div>
